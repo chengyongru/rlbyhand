@@ -36,8 +36,8 @@ export const LESSONS: LessonDefinition[] = [
         ],
         formula: String.raw`\log \pi_\theta(y \mid x) = \sum_{t=1}^{T} \log \pi_\theta(y_t \mid x, y_{<t})`,
         formulaCaption: {
-          zh: '在右侧“采样显微镜”打开 Token 热力图，悬浮任意词元即可查看它的概率 p、局部熵 H 与 Top-5 候选词。',
-          en: 'Enable the Token Heatmap in the Microscope tab and hover any token to inspect its probability p, local entropy H, and Top-5 candidates.',
+          zh: '若日志记录了逐词概率，可在“采样显微镜”打开热力图，悬浮词元查看概率 p、局部熵 H 与 Top-5 候选词。',
+          en: 'If token probabilities were logged, enable the heatmap in the Microscope and hover a token to inspect its probability p, local entropy H, and Top-5 candidates.',
         },
       },
       {
@@ -48,8 +48,8 @@ export const LESSONS: LessonDefinition[] = [
             en: 'Supervised Fine-Tuning (SFT) minimizes negative log-likelihood on fixed demonstrations. It requires pre-written reference traces and never lets the model sample its own trajectories or learn from its own mistakes.',
           },
           {
-            zh: '在 3 数字 Countdown 上，0.5B 模型本身已有 ~16% 的 Pass@1 和 >50% 的 Pass@6——正确解法已经藏在它的采样分布里，缺的只是把正确样本的概率抬上来。',
-            en: 'On 3-number Countdown, Qwen2.5-0.5B-Instruct already hits ~16% Pass@1 and >50% Pass@6. Valid solutions already exist inside its distribution; RL simply amplifies them.',
+            zh: '假设在 3 数字 Countdown 上，模型的 Pass@1 只有 16%，但 Pass@6 超过 50%：这意味着正确解法已在采样分布里，训练可以尝试提高这些样本的概率。',
+            en: 'Suppose Pass@1 is only 16% on 3-number Countdown but Pass@6 exceeds 50%. Valid solutions are already in the sampling distribution; training can try to make them more likely.',
           },
         ],
         formula: String.raw`\mathcal{L}_{\text{SFT}}(\theta) = -\frac{1}{T}\sum_{t=1}^{T} \log \pi_\theta(y_t^* \mid x, y_{<t}^*)`,
@@ -254,8 +254,8 @@ export const LESSONS: LessonDefinition[] = [
         heading: { zh: '2. 警惕“零梯度步（Zero-Gradient Step）”', en: '2. Watching Out for Zero-Gradient Steps' },
         paragraphs: [
           {
-            zh: '当某道题太难（G 条全错，R 全为 0.1）或太简单（G 条全对，R 全为 1.1）时，组内标准差 σ = 0，所有 Advantage 全是 0，这一步白算。拖动右侧步数滑块到 Step 6 或 Step 143，可以在显微镜里看到真实的 Zero-Gradient 提示。',
-            en: 'When a prompt is too hard (all G fail) or too easy (all G pass), σ = 0 and every advantage collapses to 0—a wasted step. Scrub to Step 6 or Step 143 in the Microscope tab to inspect real Zero-Gradient groups.',
+            zh: '当某道题太难（G 条全错，R 全为 0.1）或太简单（G 条全对，R 全为 1.1）时，组内标准差 σ = 0，所有 Advantage 全是 0，这一步白算。拖动步数滑块，查看显微镜中是否有标记为零梯度的采样组。',
+            en: 'When a prompt is too hard (all G fail) or too easy (all G pass), σ = 0 and every advantage collapses to 0—a wasted step. Use the step slider to check whether any groups are marked as zero-gradient in the Microscope.',
           },
         ],
         callout: {
@@ -437,12 +437,12 @@ export const LESSONS: LessonDefinition[] = [
         heading: { zh: '1. 亲手制造一次 Reward Hacking', en: '1. Engineering a Clean Reward Hack' },
         paragraphs: [
           {
-            zh: '在 Countdown 验证器里，只要注释掉“检查所用数字与题目列表严格一致”这一行，只检查算式结果是否等于目标值，模型几十步内就会发现终极捷径：无视给定数字，直接输出 <answer>{target}</answer>。',
-            en: 'Comment out a single line in the Countdown verifier—checking that the used numbers match the prompt—and within ~40 steps the model discovers the ultimate shortcut: ignore the inputs and print <answer>{target}</answer>.',
+            zh: '在 Countdown 验证器里，只要注释掉“检查所用数字与题目列表严格一致”这一行，只检查算式结果是否等于目标值，模型就有机会利用一条捷径：无视给定数字，直接输出 <answer>{target}</answer>。',
+            en: 'Comment out a single line in the Countdown verifier—checking that the used numbers match the prompt—and the model can exploit a shortcut: ignore the inputs and print <answer>{target}</answer>.',
           },
           {
-            zh: '此时观测奖励曲线会垂直飙升到满分 1.1，但真实准确率跌到谷底、回复长度断崖式缩短、策略熵骤降至接近 0。',
-            en: 'Observed reward rockets to a perfect 1.1, while true accuracy crashes, response length collapses, and entropy plunges near zero.',
+            zh: '若策略反复使用这条捷径，可能出现奖励接近满分 1.1、真实准确率却下降的分歧。回复是否也变短、熵是否降低？对照回放里的样本和指标再判断。',
+            en: 'If the policy repeatedly exploits the shortcut, reward may approach 1.1 even as true accuracy falls. Do responses also get shorter and less diverse? Check the samples and metrics in the replay.',
           },
         ],
         callout: {
@@ -458,8 +458,8 @@ export const LESSONS: LessonDefinition[] = [
         heading: { zh: '2. 策略熵坍塌（Entropy Collapse）', en: '2. Policy Entropy Collapse' },
         paragraphs: [
           {
-            zh: '策略熵衡量模型探索多样性的余量。把采样温度压到 0.25 且弱化 KL 约束后，模型会迅速锁死在最初碰对的一两条固定模板上，熵在 30 步内跌破 0.1，组内样本几乎雷同，再也探索不出新策略。',
-            en: 'Policy entropy tracks remaining exploration capacity. Lowering sampling temperature to 0.25 with weak KL locks the policy onto its first lucky templates: entropy drops below 0.1 within 30 steps and accuracy stalls.',
+            zh: '策略熵衡量模型探索多样性的余量。把采样温度压到 0.25 且弱化 KL 约束后，模型可能过早集中到最初碰对的一两种模板上。可结合熵的变化和组内样本的相似程度判断探索是否减少。',
+            en: 'Policy entropy tracks remaining exploration capacity. Lowering sampling temperature to 0.25 with weak KL can concentrate the policy on its first successful templates. Compare entropy with the diversity of samples in each group to assess whether exploration has narrowed.',
           },
         ],
         formula: String.raw`H(\pi_\theta(\cdot \mid s_t)) = -\sum_{v \in \mathcal{V}} \pi_\theta(v \mid s_t)\,\log \pi_\theta(v \mid s_t)`,
@@ -483,8 +483,8 @@ export const LESSONS: LessonDefinition[] = [
       ],
       correctOptionId: 'a',
       explanation: {
-        zh: '一旦某条采样偶尔直接吐出了目标数字拿到满分，它的回复极短、log_prob 极高，梯度更新会立刻把这条捷径推成绝对主导策略。在右侧显微镜里切到 Step 60+ 即可看到满屏红色 `REWARD HACK` 标记。',
-        en: 'The moment one rollout outputs the target literal and scores 1.1, its short length and high log-prob let gradient updates lock it in immediately. Scrub past Step 60 in the Microscope to see the `REWARD HACK` flags take over.',
+        zh: '一旦某条采样偶尔直接吐出了目标数字拿到满分，它的回复极短、log_prob 极高，梯度更新会立刻把这条捷径推成绝对主导策略。可在显微镜中查找 `REWARD HACK` 标记，核对当前样本是否利用了这条捷径。',
+        en: 'The moment one rollout outputs the target literal and scores 1.1, its short length and high log-prob let gradient updates lock it in immediately. Look for `REWARD HACK` flags in the Microscope to check whether the current samples used this shortcut.',
       },
       experimentPresetId: 'reward_hacking',
       baselinePresetId: 'baseline_grpo',
@@ -559,8 +559,8 @@ export const LESSONS: LessonDefinition[] = [
         heading: { zh: '2. 同台对照：离线固定数据 vs 在线持续探索', en: '2. Head-to-Head: Fixed Pairs vs. Online Rollouts' },
         paragraphs: [
           {
-            zh: '不换任务、直接拿初始 0.5B 模型在 Countdown 上采样出的“对-错回答对”跑离线 DPO，你会看到 DPO 前期收敛极快、工程简单（不需要在线采样循环），但在第 60 步后很快触顶平台期——因为离线数据覆盖不到策略更新后的新错误分布。',
-            en: 'Training offline DPO on (correct, wrong) pairs sampled from the initial 0.5B model requires no rollout loop and rises fast at first, but plateaus around step 60 because static pairs cannot correct new mistakes the updated policy begins making.',
+            zh: '在 Countdown 上用初始模型采样的“对-错回答对”训练 DPO，不需要在线采样循环。若策略更新后的新错误不在离线数据里，早期的进步就可能转为平台期。',
+            en: 'Training DPO on Countdown preference pairs sampled from the initial model requires no online rollout loop. Early gains can plateau if the offline pairs do not cover mistakes made by the updated policy.',
           },
           {
             zh: '掌握了这 6 课的最小闭环后，迁移到 TRL、OpenRLHF 或 verl 等生产框架时，你看到的只是同样这几十行数学公式套上了 vLLM 推理引擎与 FSDP/Megatron 分布式外壳。',

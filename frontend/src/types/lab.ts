@@ -44,7 +44,7 @@ export interface SampleRollout {
   reward: number;
   advantage: number;
   breakdown: RewardBreakdown;
-  token_probs: TokenProbInfo[];
+  token_probs?: TokenProbInfo[];
 }
 
 export interface StepMetrics {

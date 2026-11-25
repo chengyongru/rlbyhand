@@ -15,10 +15,10 @@ export const UI_STRINGS = {
   // Predict card
   predictBadge: { zh: '实验预测 · 先猜再看', en: 'Predict Before You Run' },
   predictLockBtn: { zh: '锁定预测并揭晓曲线', en: 'Lock Prediction & Overlay Curve' },
-  predictCorrect: { zh: '判断准确', en: 'Correct prediction' },
-  predictWrong: { zh: '结果与直觉相反——这正是关键所在', en: 'Counter-intuitive result — here is why' },
+  predictCorrect: { zh: '符合教学预期', en: 'Matches the lesson’s prediction' },
+  predictWrong: { zh: '与教学预期不同', en: 'Differs from the lesson’s prediction' },
   predictReset: { zh: '重新选择', en: 'Try again' },
-  predictOverlaid: { zh: '已将对照实验曲线叠加至右侧仪表盘', en: 'Ablation curve overlaid on the dashboard' },
+  predictOverlaid: { zh: '在仪表盘核对记录', en: 'Compare with the logged metrics' },
 
   // Workbench tabs
   tabDashboard: { zh: '四联仪表盘', en: 'Metrics' },
@@ -28,6 +28,9 @@ export const UI_STRINGS = {
 
   // Controls
   presetLabel: { zh: '实验组', en: 'Experiment' },
+  gpuData: { zh: 'GPU 实测', en: 'GPU measurement' },
+  mockData: { zh: '模拟数据', en: 'Simulated' },
+  unknownSource: { zh: '来源未标明', en: 'Source unspecified' },
   compareBaseline: { zh: '叠加 Baseline', en: 'Overlay Baseline' },
   speedFast: { zh: '快速 (3min)', en: 'Fast (3m)' },
   speedFull: { zh: '完整 (20min)', en: 'Full (20m)' },
@@ -50,7 +53,7 @@ export const UI_STRINGS = {
   chartEntTitle: { zh: '策略熵 (nats)', en: 'Policy Entropy (nats)' },
   chartKlTitle: { zh: 'KL 散度 (k3) & 截断比例', en: 'KL Divergence (k3) & Clip Fraction' },
   legendActive: { zh: '当前实验', en: 'Active Run' },
-  legendBaseline: { zh: 'Baseline GRPO', en: 'Baseline GRPO' },
+  legendBaseline: { zh: '基线', en: 'Baseline' },
   legendReward: { zh: '观测奖励', en: 'Observed Reward' },
   legendClip: { zh: 'Clip 比例', en: 'Clip Fraction' },
 
@@ -73,8 +76,7 @@ export const UI_STRINGS = {
   heatmapKl: { zh: 'KL 偏移', en: 'KL Drift' },
   topCandidates: { zh: 'Top-5 候选词分布', en: 'Top-5 Token Distribution' },
   hackBadge: { zh: '触发作弊 (Hack)', en: 'REWARD HACK' },
-  formatOk: { zh: '格式 +0.1', en: 'Format +0.1' },
-  formatFail: { zh: '格式缺失', en: 'No Format' },
+  formatReward: { zh: '格式分', en: 'Format reward' },
   exactMatch: { zh: '数字与结果均对', en: 'Exact Match' },
   numMismatch: { zh: '数字不符', en: 'Wrong Numbers' },
 
@@ -90,7 +92,7 @@ export const UI_STRINGS = {
   },
 
   // Telemetry & Local Modal
-  vramLedgerTitle: { zh: '8GB 显存实时账本 (Qwen2.5-0.5B + LoRA r=16)', en: '8 GB VRAM Ledger (Qwen2.5-0.5B + LoRA r=16)' },
+  vramLedgerTitle: { zh: '8 GB 显存预算示例（分项为估算）', en: 'Example 8 GB VRAM Budget (estimated breakdown)' },
   vramBase: { zh: '基座 (bf16)', en: 'Base (bf16)' },
   vramLora: { zh: 'LoRA + 优化器', en: 'LoRA + AdamW' },
   vramRef: { zh: 'Ref 模型 (复用)', en: 'Ref (Shared)' },

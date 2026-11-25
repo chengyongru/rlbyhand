@@ -31,21 +31,20 @@ export function MetricsDashboard({ activeRun, baselineRun }: MetricsDashboardPro
 
   const chartData = useMemo(() => {
     if (!activeRun) return [];
-    return activeRun.steps.map((s, idx) => {
-      const b = baselineRun?.steps[Math.min(idx, (baselineRun?.steps.length ?? 1) - 1)];
+    const baselineByStep = new Map(compareBaseline ? baselineRun?.steps.map((s) => [s.step, s.metrics]) : []);
+    return activeRun.steps.map((s) => {
+      const b = baselineByStep.get(s.step);
       return {
-        idx,
         step: s.step,
         accuracy: Number((s.metrics.accuracy * 100).toFixed(1)),
-        baseAccuracy:
-          compareBaseline && b ? Number((b.metrics.accuracy * 100).toFixed(1)) : undefined,
+        baseAccuracy: b ? Number((b.accuracy * 100).toFixed(1)) : undefined,
         meanReward: Number(s.metrics.mean_reward.toFixed(2)),
         length: s.metrics.mean_response_length,
-        baseLength: compareBaseline && b ? b.metrics.mean_response_length : undefined,
+        baseLength: b?.mean_response_length,
         entropy: s.metrics.entropy,
-        baseEntropy: compareBaseline && b ? b.metrics.entropy : undefined,
+        baseEntropy: b?.entropy,
         kl: s.metrics.kl_divergence,
-        baseKl: compareBaseline && b ? b.metrics.kl_divergence : undefined,
+        baseKl: b?.kl_divergence,
         clip: Number((s.metrics.clip_fraction * 100).toFixed(1)),
       };
     });
@@ -126,6 +125,13 @@ export function MetricsDashboard({ activeRun, baselineRun }: MetricsDashboardPro
         ))}
       </SimpleGrid>
 
+      {compareBaseline && baselineRun && (
+        <Text size="xs" c="dimmed" mb="xs">
+          {pickText(UI_STRINGS.legendBaseline, lang)} · {baselineRun.metadata.preset_id}
+          {' — '}{lang === 'zh' ? '仅叠加步号相同的记录' : 'Only matching steps are overlaid'}
+        </Text>
+      )}
+
       {/* 2x2 Synchronized Telemetry Charts */}
       <SimpleGrid cols={{ base: 1, lg: 2 }} spacing="sm">
         {/* Chart 1: Accuracy & Reward */}
@@ -142,7 +148,7 @@ export function MetricsDashboard({ activeRun, baselineRun }: MetricsDashboardPro
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={chartData} onClick={handleChartClick}>
                 <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
-                <XAxis dataKey="step" tick={{ fontSize: 11, fill: axisColor }} />
+                <XAxis type="number" dataKey="step" domain={['dataMin', 'dataMax']} allowDecimals={false} tick={{ fontSize: 11, fill: axisColor }} />
                 <YAxis yAxisId="left" domain={[0, 100]} tick={{ fontSize: 11, fill: axisColor }} width={34} />
                 <YAxis
                   yAxisId="right"
@@ -163,7 +169,8 @@ export function MetricsDashboard({ activeRun, baselineRun }: MetricsDashboardPro
                     stroke="#94a3b8"
                     strokeWidth={1.6}
                     strokeDasharray="4 4"
-                    dot={false}
+                    connectNulls
+                    dot={{ r: 2 }}
                     isAnimationActive={false}
                   />
                 )}
@@ -199,14 +206,14 @@ export function MetricsDashboard({ activeRun, baselineRun }: MetricsDashboardPro
               {pickText(UI_STRINGS.chartLenTitle, lang)}
             </Text>
             <Text size="11px" c="dimmed" ff="monospace">
-              max=256
+              max={activeRun?.metadata.max_new_tokens ?? '—'}
             </Text>
           </Group>
           <Box h={195}>
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={chartData} onClick={handleChartClick}>
                 <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
-                <XAxis dataKey="step" tick={{ fontSize: 11, fill: axisColor }} />
+                <XAxis type="number" dataKey="step" domain={['dataMin', 'dataMax']} allowDecimals={false} tick={{ fontSize: 11, fill: axisColor }} />
                 <YAxis domain={[0, 260]} tick={{ fontSize: 11, fill: axisColor }} width={34} />
                 <Tooltip contentStyle={tooltipStyle} />
                 <Legend wrapperStyle={{ fontSize: 11 }} />
@@ -219,7 +226,8 @@ export function MetricsDashboard({ activeRun, baselineRun }: MetricsDashboardPro
                     stroke="#94a3b8"
                     strokeWidth={1.6}
                     strokeDasharray="4 4"
-                    dot={false}
+                    connectNulls
+                    dot={{ r: 2 }}
                     isAnimationActive={false}
                   />
                 )}
@@ -251,7 +259,7 @@ export function MetricsDashboard({ activeRun, baselineRun }: MetricsDashboardPro
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={chartData} onClick={handleChartClick}>
                 <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
-                <XAxis dataKey="step" tick={{ fontSize: 11, fill: axisColor }} />
+                <XAxis type="number" dataKey="step" domain={['dataMin', 'dataMax']} allowDecimals={false} tick={{ fontSize: 11, fill: axisColor }} />
                 <YAxis tick={{ fontSize: 11, fill: axisColor }} width={34} />
                 <Tooltip contentStyle={tooltipStyle} />
                 <Legend wrapperStyle={{ fontSize: 11 }} />
@@ -264,7 +272,8 @@ export function MetricsDashboard({ activeRun, baselineRun }: MetricsDashboardPro
                     stroke="#94a3b8"
                     strokeWidth={1.6}
                     strokeDasharray="4 4"
-                    dot={false}
+                    connectNulls
+                    dot={{ r: 2 }}
                     isAnimationActive={false}
                   />
                 )}
@@ -296,7 +305,7 @@ export function MetricsDashboard({ activeRun, baselineRun }: MetricsDashboardPro
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={chartData} onClick={handleChartClick}>
                 <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
-                <XAxis dataKey="step" tick={{ fontSize: 11, fill: axisColor }} />
+                <XAxis type="number" dataKey="step" domain={['dataMin', 'dataMax']} allowDecimals={false} tick={{ fontSize: 11, fill: axisColor }} />
                 <YAxis yAxisId="left" tick={{ fontSize: 11, fill: axisColor }} width={36} />
                 <YAxis yAxisId="right" orientation="right" domain={[0, 40]} tick={{ fontSize: 11, fill: axisColor }} width={34} />
                 <Tooltip contentStyle={tooltipStyle} />
@@ -311,7 +320,8 @@ export function MetricsDashboard({ activeRun, baselineRun }: MetricsDashboardPro
                     stroke="#94a3b8"
                     strokeWidth={1.6}
                     strokeDasharray="4 4"
-                    dot={false}
+                    connectNulls
+                    dot={{ r: 2 }}
                     isAnimationActive={false}
                   />
                 )}

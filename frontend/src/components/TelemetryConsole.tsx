@@ -21,18 +21,17 @@ interface TelemetryConsoleProps {
 }
 
 export function TelemetryConsole({ activeRun }: TelemetryConsoleProps) {
-  const { lang, stepIndex, logs, deviceTelemetry, importRunLog, pushLog } = useLabStore();
+  const { lang, stepIndex, logs, importRunLog, pushLog } = useLabStore();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const curStep = activeRun?.steps[Math.min(stepIndex, (activeRun?.steps.length ?? 1) - 1)];
-  const peakVram = curStep?.metrics.vram_peak_gb ?? 5.35;
-  const totalBudget = deviceTelemetry?.total_vram_gb || 8.0;
+  const peakVram = curStep?.metrics.vram_peak_gb;
+  const totalBudget = 8.0;
 
   const baseGb = 1.0;
   const loraGb = 0.1;
   const sysGb = 1.1;
-  const actGb = Math.max(0.8, Number((peakVram - baseGb - loraGb - sysGb).toFixed(2)));
-  const freeGb = Math.max(0, Number((totalBudget - (baseGb + loraGb + actGb + sysGb)).toFixed(2)));
+  const actGb = Math.max(0, (peakVram ?? 0) - baseGb - loraGb - sysGb);
 
   const pct = (gb: number) => Math.min(100, (gb / totalBudget) * 100);
 
@@ -72,8 +71,8 @@ export function TelemetryConsole({ activeRun }: TelemetryConsoleProps) {
           <Text size="xs" fw={600}>
             {pickText(UI_STRINGS.vramLedgerTitle, lang)}
           </Text>
-          <Badge size="xs" color={peakVram > 6.8 ? 'red' : 'teal'} ff="monospace">
-            {peakVram.toFixed(2)} / {totalBudget.toFixed(1)} GB ({freeGb.toFixed(2)} GB free)
+          <Badge size="xs" color={peakVram !== undefined && peakVram > 6.8 ? 'red' : 'teal'} ff="monospace">
+            {pickText(UI_STRINGS.kpiVram, lang)}: {peakVram === undefined ? '—' : `${peakVram.toFixed(2)} GB`}
           </Badge>
         </Group>
 

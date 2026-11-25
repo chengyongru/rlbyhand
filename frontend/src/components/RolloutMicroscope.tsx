@@ -54,6 +54,7 @@ export function RolloutMicroscope({ stepLog }: RolloutMicroscopeProps) {
     );
   }
 
+  const hasTokenData = stepLog.samples.some((s) => s.token_probs?.length);
   const maxAbsAdv = Math.max(1.5, ...stepLog.samples.map((s) => Math.abs(s.advantage)));
 
   return (
@@ -98,11 +99,14 @@ export function RolloutMicroscope({ stepLog }: RolloutMicroscopeProps) {
 
           <Group gap={6}>
             <Text size="11px" c="dimmed">
-              {pickText(UI_STRINGS.heatmapMode, lang)}
+              {hasTokenData
+                ? pickText(UI_STRINGS.heatmapMode, lang)
+                : lang === 'zh' ? '本步未记录逐词概率，显示原文' : 'No token probabilities recorded; showing text'}
             </Text>
             <SegmentedControl
               size="xs"
-              value={heatmap}
+              disabled={!hasTokenData}
+              value={hasTokenData ? heatmap : 'off'}
               onChange={(v) => setHeatmap(v as HeatmapMode)}
               data={[
                 { label: pickText(UI_STRINGS.heatmapOff, lang), value: 'off' },
@@ -189,9 +193,7 @@ export function RolloutMicroscope({ stepLog }: RolloutMicroscopeProps) {
                     color={sample.breakdown.format_reward > 0 ? 'teal' : 'gray'}
                     variant="outline"
                   >
-                    {sample.breakdown.format_reward > 0
-                      ? pickText(UI_STRINGS.formatOk, lang)
-                      : pickText(UI_STRINGS.formatFail, lang)}
+                    {pickText(UI_STRINGS.formatReward, lang)} {sample.breakdown.format_reward > 0 ? '+' : ''}{sample.breakdown.format_reward}
                   </Badge>
                   {!isHack && (
                     <Badge
@@ -240,7 +242,7 @@ export function RolloutMicroscope({ stepLog }: RolloutMicroscopeProps) {
               </Box>
 
               {/* Completion Body: Token Heatmap (when available & enabled) OR Clean Think/Answer */}
-              {heatmap !== 'off' && sample.token_probs.length > 0 ? (
+              {heatmap !== 'off' && sample.token_probs?.length ? (
                 <Box
                   p={8}
                   style={{
@@ -308,7 +310,11 @@ export function RolloutMicroscope({ stepLog }: RolloutMicroscopeProps) {
                 </Box>
               ) : (
                 <Stack gap={4}>
-                  {sample.think_text && (
+                  {!sample.token_probs?.length ? (
+                    <Text size="xs" ff="monospace" style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>
+                      {sample.raw_text || (lang === 'zh' ? '（空回复）' : '(empty response)')}
+                    </Text>
+                  ) : sample.think_text && (
                     <Text
                       size="xs"
                       c="dimmed"
@@ -324,9 +330,11 @@ export function RolloutMicroscope({ stepLog }: RolloutMicroscopeProps) {
                     </Text>
                   )}
                   <Group gap={8} align="center">
-                    <Text size="xs" ff="monospace" fw={600}>
-                      &lt;answer&gt;{sample.answer_text || '(empty)'}&lt;/answer&gt;
-                    </Text>
+                    {!!sample.token_probs?.length && (
+                      <Text size="xs" ff="monospace" fw={600}>
+                        &lt;answer&gt;{sample.answer_text || '(empty)'}&lt;/answer&gt;
+                      </Text>
+                    )}
                     <Text size="11px" c="dimmed">
                       — {sample.breakdown.reason}
                     </Text>

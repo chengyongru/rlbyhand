@@ -67,6 +67,11 @@ export function LessonPane() {
             {pickText(lesson.subtitle, lang)}
           </Text>
 
+          <Text size="xs" c="dimmed" mb="sm">
+            {lang === 'zh'
+              ? '课文中的步数和曲线是教学示例；当前实验的结果请看右侧回放。'
+              : 'Steps and trends in the lesson are illustrative. Use the replay to check what this run recorded.'}
+          </Text>
           <Divider mb="md" color="var(--lab-border)" />
 
           {/* Textbook Sections */}

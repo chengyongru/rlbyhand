@@ -1,4 +1,5 @@
 import {
+  Badge,
   Box,
   Button,
   Group,
@@ -15,6 +16,7 @@ import { postStartTrain, postStopTrain } from '../api/client';
 import { pickText, PRESET_LABELS, UI_STRINGS } from '../i18n';
 import { LESSONS } from '../i18n/lessons';
 import { useLabStore } from '../store/useLabStore';
+import type { RunLog } from '../types/lab';
 import { CodeSurgeryTab } from './CodeSurgeryTab';
 import { MetricsDashboard } from './MetricsDashboard';
 import { RolloutMicroscope } from './RolloutMicroscope';
@@ -52,6 +54,11 @@ export function WorkbenchPane() {
   const totalSteps = activeRun?.steps.length ?? 1;
   const clampedIdx = Math.min(stepIndex, Math.max(0, totalSteps - 1));
   const currentStepLog = activeRun?.steps[clampedIdx];
+
+  const sourceLabel = (run?: RunLog) => {
+    const mock = run?.metadata.is_mock;
+    return pickText(mock === true ? UI_STRINGS.mockData : mock === false ? UI_STRINGS.gpuData : UI_STRINGS.unknownSource, lang);
+  };
 
   // Build preset dropdown options (all demo presets + any imported/live runs)
   const presetOptions = Object.keys(runs).map((id) => ({
@@ -120,12 +127,17 @@ export function WorkbenchPane() {
               data={presetOptions}
               aria-label={pickText(UI_STRINGS.presetLabel, lang)}
             />
+            <Badge size="sm" variant="light" color={activeRun?.metadata.is_mock === false ? 'teal' : 'gray'}>
+              {sourceLabel(activeRun)}
+            </Badge>
             <Switch
               size="xs"
               checked={compareBaseline}
               onChange={(e) => setCompareBaseline(e.currentTarget.checked)}
               label={
-                <Text size="xs">{pickText(UI_STRINGS.compareBaseline, lang)}</Text>
+                <Text size="xs">
+                  {pickText(UI_STRINGS.compareBaseline, lang)}{compareBaseline && ` · ${sourceLabel(baselineRun)}`}
+                </Text>
               }
             />
           </Group>
@@ -232,7 +244,7 @@ export function WorkbenchPane() {
 
         <ScrollArea style={{ flex: 1 }} p="md" offsetScrollbars>
           <Tabs.Panel value="dashboard">
-            <MetricsDashboard activeRun={activeRun} baselineRun={baselineRun} />
+            {activeTab === 'dashboard' && <MetricsDashboard activeRun={activeRun} baselineRun={baselineRun} />}
           </Tabs.Panel>
           <Tabs.Panel value="microscope">
             <RolloutMicroscope stepLog={currentStepLog} />
