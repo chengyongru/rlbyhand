@@ -1,0 +1,30 @@
+* { box-sizing: border-box; }
+body { margin: 0; color: #18181b; background: #faf9f6; font: 1rem/1.65 system-ui, sans-serif; }
+main { max-width: 56rem; margin: auto; padding: 2rem 1rem 4rem; }
+nav, small, dt { color: #52525b; }
+a, b { color: #1d4ed8; }
+h1 { margin: 1.4rem 0 .3rem; font-size: clamp(2rem, 6vw, 3rem); line-height: 1.2; }
+h2 { font-size: 1.2rem; margin: 0; }
+p { margin: .5rem 0; }
+section, #status { margin-top: 1rem; padding: clamp(1rem, 3vw, 1.6rem); background: white; border: 1px solid #dedee2; border-radius: .75rem; }
+.task, .section-head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+.task { background: #eff5ff; border-color: #d6e2fa; }
+.formula { flex: none; padding: 1rem; background: #fff; border-radius: .5rem; }
+.formula code, dd { font-size: 1.5rem; }
+.note { margin: 1rem 0; padding-left: 1rem; border-left: 3px solid #7383a2; }
+select { font: inherit; background: white; color: inherit; padding: .25rem; }
+dl { margin: 1rem 0; }
+.scores { display: grid; grid-template-columns: repeat(3, 1fr); gap: .5rem; }
+.scores > div, .example { padding: .75rem; background: #f4f5f6; border-radius: .4rem; }
+dd { margin: 0; font-weight: 700; font-variant-numeric: tabular-nums; }
+.chart { display: block; width: 100%; max-width: 42rem; margin: 1rem auto; }
+summary { color: #1d4ed8; cursor: pointer; }
+table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
+th, td { text-align: left; padding: .35rem; border-bottom: 1px solid #dedee2; }
+.example { margin-top: .6rem; }
+.example h3 { margin: 0; font-size: 1rem; }
+@media (max-width: 38rem) {
+  .task, .section-head { align-items: start; flex-direction: column; }
+  .scores { grid-template-columns: 1fr; }
+  .scores > div { display: flex; flex-wrap: wrap; align-items: baseline; gap: .4rem; }
+}

@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>训练前后同卷 · LLM RL Lab</title>
+    <link rel="icon" href="data:," />
+    <link rel="stylesheet" href="./operator-study.css" />
+    <script type="module" src="./operator-study.js"></script>
+  </head>
+  <body>
+    <main>
+      <header>
+        <nav aria-label="课程导航"><a href="./">← 课程首页</a> / 第 3 课 · 配对评测</nav>
+        <h1>训练前后同卷</h1>
+        <p>给训练前后的模型做同一份卷子。除了看总分，还要逐题看：哪些题改对了，哪些原本会做的题反而做错了？</p>
+      </header>
+      <section class="task" aria-labelledby="task-title">
+        <div><h2 id="task-title">任务：运算符三选一</h2>
+          <p>给定三个数和目标值，只能用 <code>+</code>、<code>-</code> 或 <code>*</code> 替换问号，使等式成立。这不是自由生成算式或解题过程。</p></div>
+        <div class="formula"><code>(a <b>?</b> b)+c</code> = 目标值</div>
+      </section>
+      <p class="note"><strong>解读边界：</strong>即使训练前后的差异在统计上显著，也只能说明这项受限任务上的表现有差异，不能据此推出通用推理能力提升。</p>
+      <p id="status" role="status">正在读取同目录的 operator-results.json…</p>
+      <noscript>请启用 JavaScript 以读取实验结果。</noscript>
+      <div id="results" hidden>
+        <section aria-labelledby="scores-title">
+          <div class="section-head"><h2 id="scores-title">01 · 同卷成绩</h2>
+            <label>实验种子 <select id="seed"></select></label></div>
+          <p id="cohort"></p>
+          <dl class="scores">
+            <div><dt>训练前正确率</dt><dd id="before-score"></dd><small id="before-count"></small></div>
+            <div><dt>训练后正确率</dt><dd id="after-score"></dd><small id="after-count"></small></div>
+            <div><dt>正确率变化</dt><dd id="delta"></dd><small>单位：百分点</small></div>
+          </dl>
+          <p id="transitions"></p><p id="uncertainty"></p>
+        </section>
+        <section aria-labelledby="curve-title">
+          <h2 id="curve-title">02 · 验证集曲线</h2>
+          <p>横轴是训练步数，纵轴是验证集正确率。每个点对应一次验证；同卷测试成绩单独列在上方，不参与连线。</p>
+          <div id="curve"></div>
+        </section>
+        <section aria-labelledby="examples-title">
+          <h2 id="examples-title">03 · 逐题核对</h2>
+          <p>把两次选择分别代回算式，与目标值比较。以下是主种子的作答，每类取一道样题，不随上方种子切换。</p>
+          <div id="examples"></div>
+        </section>
+      </div>
+    </main>
+  </body>
+</html>

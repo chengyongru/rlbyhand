@@ -68,7 +68,9 @@ def test_update_uses_frozen_reference_and_response_only_logp_sums():
     class Tokenizer:
         def apply_chat_template(self, messages, *, tokenize, add_generation_prompt):
             assert not tokenize and add_generation_prompt
-            assert "Numbers: [3, 7, 12], Target: 33" in messages[-1]["content"]
+            assert messages[-1]["role"] == "user"
+            assert "Numbers: [3, 7, 12]" in messages[-1]["content"]
+            assert "Target: 33" in messages[-1]["content"]
             return "rendered prompt"
 
         def encode(self, text, *, add_special_tokens=True):

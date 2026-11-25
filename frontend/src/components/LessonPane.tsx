@@ -67,6 +67,11 @@ export function LessonPane() {
             {pickText(lesson.subtitle, lang)}
           </Text>
 
+          {lesson.id === 'lesson-3' && (
+            <Button component="a" href="./operator-study.html" size="xs" variant="light" mb="md" rightSection={<ArrowRight size={14} />}>
+              {lang === 'zh' ? '训练前后同卷：运算符三选一' : 'Before & after: the same operator quiz (中文)'}
+            </Button>
+          )}
           <Text size="xs" c="dimmed" mb="sm">
             {lang === 'zh'
               ? '课文中的步数和曲线是教学示例；当前实验的结果请看右侧回放。'

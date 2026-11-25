@@ -4,6 +4,8 @@ An interactive web-based reinforcement learning lab designed for undergraduate m
 
 Built around a single lightweight model organism — `Qwen2.5-0.5B-Instruct` + LoRA on 3-number Countdown — across six lessons covering `log_prob`, REINFORCE, GRPO, PPO clipping + Schulman k3 KL, common failure modes (reward hacking, entropy collapse, length drift), and offline DPO vs. online GRPO.
 
+**教学演示：[训练前后做同一张卷](experiments/operator-select/README.md)** · 600 道留出题、三个训练种子、逐题 CSV 和可离线打开的课堂演示。只选一个运算符，与下面的自由生成实验分开。
+
 ## Modes
 
 - **Online Replay (Static Web)**: Browse all six bilingual (ZH / EN) lessons, inspect step-by-step rollouts and token probabilities, complete predict-before-run ablations, and compare recorded GPU runs without a backend. See the [experiment results](experiments/countdown-replay.md) for sample counts, settings, and limitations.
