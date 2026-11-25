@@ -1,0 +1,119 @@
+@import 'katex/dist/katex.min.css';
+
+:root {
+  --lab-bg: #faf9f6;
+  --lab-surface: #ffffff;
+  --lab-subtle: #f4f4f2;
+  --lab-border: #e4e4e7;
+  --lab-text: #18181b;
+  --lab-muted: #52525b;
+  --lab-formula-bg: #f6f7f9;
+  --lab-diff-add-bg: #ecfdf5;
+  --lab-diff-add-fg: #065f46;
+  --lab-diff-del-bg: #fef2f2;
+  --lab-diff-del-fg: #991b1b;
+}
+
+[data-mantine-color-scheme='dark'] {
+  --lab-bg: #0d1117;
+  --lab-surface: #161b22;
+  --lab-subtle: #1c2128;
+  --lab-border: #2a313c;
+  --lab-text: #e6edf3;
+  --lab-muted: #8b949e;
+  --lab-formula-bg: #12171e;
+  --lab-diff-add-bg: rgba(16, 185, 129, 0.14);
+  --lab-diff-add-fg: #6ee7b7;
+  --lab-diff-del-bg: rgba(239, 68, 68, 0.14);
+  --lab-diff-del-fg: #fca5a5;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  background-color: var(--lab-bg);
+  color: var(--lab-text);
+  -webkit-font-smoothing: antialiased;
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+.lab-resize-handle {
+  width: 5px;
+  background: transparent;
+  position: relative;
+  transition: background-color 120ms ease;
+  cursor: col-resize;
+}
+
+.lab-resize-handle::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 2px;
+  width: 1px;
+  background: var(--lab-border);
+}
+
+.lab-resize-handle:hover::after,
+.lab-resize-handle[data-resize-handle-active]::after {
+  background: #2563eb;
+  width: 2px;
+  left: 1.5px;
+}
+
+.katex-display {
+  margin: 0.4rem 0 !important;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 0.2rem 0;
+}
+
+.diff-line {
+  font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+  line-height: 1.55;
+  padding: 1px 10px;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.diff-line-add {
+  background-color: var(--lab-diff-add-bg);
+  color: var(--lab-diff-add-fg);
+}
+
+.diff-line-del {
+  background-color: var(--lab-diff-del-bg);
+  color: var(--lab-diff-del-fg);
+}
+
+.diff-line-ctx {
+  color: var(--lab-muted);
+}
+
+.token-chip {
+  display: inline-block;
+  font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+  padding: 2px 4px;
+  margin: 2px 1.5px;
+  border-radius: 3px;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: border-color 100ms ease, transform 80ms ease;
+}
+
+.token-chip:hover {
+  border-color: #2563eb;
+}

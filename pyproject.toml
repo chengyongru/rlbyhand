@@ -1,0 +1,38 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "llm-rl-lab"
+version = "0.1.0"
+description = "Interactive 8GB-VRAM LLM reinforcement learning lab (REINFORCE, GRPO, DPO on Countdown)."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.32.0",
+    "pydantic>=2.9.0",
+    "numpy>=1.26.0",
+]
+
+[project.optional-dependencies]
+gpu = [
+    "torch>=2.4.0",
+    "transformers>=4.46.0",
+    "peft>=0.13.0",
+    "accelerate>=1.0.0",
+]
+dev = [
+    "pytest>=8.3.0",
+    "httpx>=0.27.0",
+]
+
+[project.scripts]
+llm-rl-lab = "llm_rl_lab.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["backend/llm_rl_lab"]
+
+[tool.pytest.ini_options]
+pythonpath = ["backend"]
+testpaths = ["backend/tests"]
