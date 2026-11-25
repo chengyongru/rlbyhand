@@ -6,7 +6,7 @@ Run this first when testing on a real GPU at home:
 
 Checks:
 1. GPU device, recommended dtype (bf16 vs fp16), and initial VRAM headroom.
-2. Zero-shot / 1-shot Pass@1 and Pass@6 on 3-number Countdown (verifies 10%-30% RL sweet spot).
+2. Few-shot Pass@1 and Pass@6 on 3-number Countdown (verifies 10%-30% RL sweet spot).
 3. Batched rollout latency with `</answer>` early stopping.
 4. 5-step micro-batched GRPO sanity run with `disable_adapter()` KL and peak VRAM report.
 """

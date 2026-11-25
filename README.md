@@ -6,8 +6,8 @@ Built around a single lightweight model organism — `Qwen2.5-0.5B-Instruct` + L
 
 ## Modes
 
-- **Online Replay (Static Web)**: Browse all six bilingual (ZH / EN) lessons, inspect step-by-step rollouts and token probabilities, complete predict-before-run ablations, and compare pre-recorded training curves with zero setup.
-- **Local GPU Lab (`8 GB VRAM`)**: Launch the local FastAPI + PyTorch backend to edit loss/reward functions in the browser, run 1-second dry-run tensor checks, and stream live training metrics over WebSocket.
+- **Online Replay (Static Web)**: Browse all six bilingual (ZH / EN) lessons, inspect step-by-step rollouts and token probabilities, complete predict-before-run ablations, and compare recorded GPU runs without a backend. See the [experiment results](experiments/countdown-replay.md) for sample counts, settings, and limitations.
+- **Local GPU Lab (`8 GB VRAM`)**: Launch the local FastAPI + PyTorch backend to run training presets and stream metrics over WebSocket. The code editor checks edits on test tensors; it does not replace the live loss. Offline DPO requires the recording script and a frozen preference dataset.
 
 ## Quick Start
 
@@ -30,7 +30,7 @@ uv run llm-rl-lab serve --mock
 
 ```bash
 uv sync --extra gpu
-# 1. Verify VRAM headroom, initial Pass@1/Pass@8, and rollout speed
+# 1. Verify VRAM headroom, initial Pass@1/Pass@6, and rollout speed
 uv run python backend/scripts/baseline_check.py
 # 2. Launch interactive web lab bound to 127.0.0.1
 uv run llm-rl-lab serve
