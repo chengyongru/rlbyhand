@@ -5,6 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "lint": "node scripts/lint.mjs",
+    "check:layout": "python scripts/check-layout.py",
+    "check": "npm run lint && npm run build && npm run check:layout",
     "build": "tsc -b && vite build",
     "build:backend": "tsc -b && vite build --outDir ../backend/llm_rl_lab/static --emptyOutDir",
     "preview": "vite preview"

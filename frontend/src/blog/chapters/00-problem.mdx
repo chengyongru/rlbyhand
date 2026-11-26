@@ -1,14 +1,19 @@
 import { CoreQuestionSketch, GradientAscentSketch, PuzzleSketch, SixTriesAnimation } from '../components/ProblemWidgets';
 
-hi， 你好！ 我是 @chengyongru！ 很高兴能把自己对 RL 的一些理解分享给大家。我会尽我所能让这一切看起来简单又有趣。这里假设大家有基础的大学数学知识，如果哪些公式一时看不懂，自己稍微补充一下就好。
+export const meta = {
+  name: '从算术题开始',
+  published: true,
+};
+
+你好！ 我是 <a href="https://x.com/chengyongru" target="_blank" rel="noopener noreferrer">@chengyongru</a>！ 很高兴能把自己对 RL 的一些理解分享给大家。我会尽我所能让这一切看起来简单又有趣。这里假设大家有基础的大学数学知识，如果哪些公式一时看不懂，自己稍微补充一下就好。
 
 闲言少叙，我们直接开始吧。
 
-我们从一个简单的算术题开始：这里有三个数字 $3$、$7$、$12$，现在我们要把它们用加减乘除连起来，每个数用一次，最终得到 $33$。
+我们从一个简单的算术题开始，这里有三个数字 $3$、$7$、$12$，现在我们要把它们用加减乘除连起来，每个数用一次，最终得到 $33$。
 
 <PuzzleSketch />
 
-相信大家一眼就能看出来答案是 $3 \times 7 + 12 = 33$。
+相信大家一眼就能看出来答案。
 
 现在我们把同样类型的问题交给一个 0.5B 的 LLM，这里我们选择的基座模型是 `Qwen2.5-0.5B-Instruct`。
 
@@ -25,7 +30,7 @@ for i in range(6):
 
 <SixTriesAnimation />
 
-如果单次答对的概率是 $0.16$，那么独立试 $6$ 次全错的概率就是
+假设单次答对的概率是 $0.16$，那么独立试 $6$ 次全错的概率就是
 
 $$
 (1 - 0.16)^6 \approx 0.35

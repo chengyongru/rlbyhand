@@ -10,6 +10,15 @@ export const CHALK_COLORS = {
 
 export interface BlogChapter {
   id: string;
+  number: string;
+  name: string;
   title: string;
+  published: boolean;
   Content: ComponentType;
+}
+
+export interface PlannedChapter {
+  id: string;
+  number: string;
+  name: string;
 }

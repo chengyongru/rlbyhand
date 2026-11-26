@@ -82,29 +82,46 @@ export function SixTriesAnimation() {
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: 'minmax(200px, 1fr) minmax(240px, 1.15fr)',
-          gap: 32,
+          gridTemplateColumns: 'minmax(240px, 1fr) minmax(240px, 1.1fr)',
+          gap: 28,
           alignItems: 'center',
           width: '100%',
         }}
       >
         <div style={{ display: 'flex', flexDirection: 'column', gap: 28, alignItems: 'flex-start' }}>
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: 20 }}>
-            <span className="chalk-title" style={{ fontSize: 28, color: 'var(--lab-muted)', minWidth: 96 }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 18 }}>
+            <span
+              className="chalk-title"
+              style={{ fontSize: 28, color: 'var(--lab-muted)', minWidth: 88, whiteSpace: 'nowrap' }}
+            >
               答 1 次
             </span>
-            <span className="chalk-title" style={{ fontSize: 42, color: white }}>
+            <span className="chalk-title" style={{ fontSize: 42, color: white, whiteSpace: 'nowrap' }}>
               16%
             </span>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
-            <span className="chalk-title" style={{ fontSize: 28, color: yellow, minWidth: 96 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
+            <span
+              className="chalk-title"
+              style={{ fontSize: 28, color: yellow, minWidth: 88, whiteSpace: 'nowrap' }}
+            >
               试 6 次
             </span>
-            <div style={{ position: 'relative', display: 'inline-block', padding: '6px 20px' }}>
-              <span className="chalk-title" style={{ fontSize: 42, color: yellow }}>
-                &gt; 50%
+            <div
+              style={{
+                position: 'relative',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '6px 22px',
+              }}
+            >
+              <span
+                className="chalk-title"
+                style={{ fontSize: 40, color: yellow, whiteSpace: 'nowrap', lineHeight: 1.15 }}
+              >
+                ≈ 65%
               </span>
               <RoughStrokeSvg
                 width={170}

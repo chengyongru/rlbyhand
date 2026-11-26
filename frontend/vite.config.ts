@@ -13,7 +13,7 @@ export default defineConfig({
       enforce: 'pre',
       ...mdx({
         remarkPlugins: [remarkGfm, remarkMath],
-        rehypePlugins: [rehypeKatex, rehypeHighlight],
+        rehypePlugins: [[rehypeKatex, { output: 'html' }], rehypeHighlight],
       }),
     },
     react(),

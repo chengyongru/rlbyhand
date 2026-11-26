@@ -1,0 +1,116 @@
+import { LogDerivSketch, ReinforceDirectionSketch, TokenChainSketch } from '../components/PolicyGradientWidgets';
+
+export const meta = {
+  name: '怎么对目标函数求导',
+  published: false,
+};
+
+书接上回（如果有点忘了可以跳到上一节复习一下）， 我们现在要解决如下这样一个优化问题
+
+$$
+\max_{\theta} \; J(\theta) = \sum_{y} P_\theta(y \mid x)\, R(y)
+$$
+
+之前也提到过想让 $J(\theta)$ 变大，我们要算它对参数 $\theta$ 的梯度 $\nabla_\theta J(\theta)$
+
+我们直接把求导符号放到等式右边。注意裁判的打分规则 $R(y)$ 是提前写死的程序，它只看回答 $y$ 本身，和模型参数 $\theta$ 没有任何关系。所以在对 $\theta$ 求导时，$R(y)$ 就是一个常数，求导符号直接穿过去，只作用在 $P_\theta(y \mid x)$ 上：
+
+$$
+\nabla_\theta J(\theta) = \sum_{y} \nabla_\theta P_\theta(y \mid x)\, R(y)
+$$
+
+这个式子看着挺简单，在数学上完全正确，但拿到计算机里**根本没法直接算**。
+
+问题出在求和号 $\sum_y$ 上：它要求我们把模型可能说出的**所有句子**全部枚举一遍。大语言模型的词表有十几万个词，哪怕回答只有短短 100 个字，可能的句子组合也比宇宙里的原子总数还要多。
+
+平时遇到这种没法枚举的求和，概率论里有一个很朴素的办法：只要式子长成 $\sum_y P_\theta(y \mid x) \cdot (\text{某个东西})$ 的期望形式，我们就可以让模型按 $P_\theta$ 实际采样几条回答，算一个样本均值来近似它。
+
+可回头看一眼刚才的式子，$\sum_y$ 后面跟着的是 $\nabla_\theta P_\theta(y \mid x)$，概率 $P_\theta(y \mid x)$ 被求导符号吃进去了，外面没有单独的概率权重，所以我们没法直接采样求平均。
+
+怎么把概率 $P_\theta(y \mid x)$ 重新变回来？回忆一下大一高数里学过的复合函数对数求导公式：
+
+$$
+(\ln f)' = \frac{f'}{f}
+$$
+
+把分母 $f$ 乘到等号左边，它就变成了：
+
+$$
+f' = f \cdot (\ln f)'
+$$
+
+现在把 $f$ 换成 $P_\theta(y \mid x)$，我们就得到了一个非常漂亮的恒等变形：
+
+$$
+\nabla_\theta P_\theta(y \mid x) = P_\theta(y \mid x)\, \nabla_\theta \ln P_\theta(y \mid x)
+$$
+
+<LogDerivSketch />
+
+把这个恒等式代回刚才的 $\nabla_\theta J(\theta)$，结果瞬间柳暗花明：
+
+$$
+\nabla_\theta J(\theta) = \sum_{y} P_\theta(y \mid x)\, R(y)\, \nabla_\theta \ln P_\theta(y \mid x)
+$$
+
+你看，概率 $P_\theta(y \mid x)$ 重新跑回最前面了。按期望的定义，它可以写成：
+
+$$
+\nabla_\theta J(\theta) = \mathbb{E}_{y \sim P_\theta}\big[\, R(y)\, \nabla_\theta \ln P_\theta(y \mid x) \,\big]
+$$
+
+这个技巧在强化学习里叫对数求导技巧（Log-Derivative Trick），它一下子解决了两个核心卡点：
+
+1. **不用遍历所有句子**：既然变成了关于 $P_\theta$ 的期望，我们就让模型采样 $N$ 条回答（比如上一节的 6 次），把每条的 $R(y_i)\, \nabla_\theta \ln P_\theta(y_i \mid x)$ 算出来求平均就行。
+2. **不需要对裁判求导**：$R(y)$ 在整个求导过程里始终是一个普通常数，真正参与反向传播求导的，是模型自己输出这条回答时的对数概率 $\ln P_\theta(y \mid x)$。
+
+剩下的最后一个拼图很直观：一整段回答的对数概率 $\ln P_\theta(y \mid x)$ 具体怎么算出来？
+
+大语言模型并不是一口气吐出整段回答，而是一个词元（token）接一个词元往外生成的，我们可以把整段回答记作 $y = (y_1, y_2, \dots, y_T)$。
+
+根据概率论的条件概率乘法公式，一整段回答出现的概率，等于每一步选出当前词元的条件概率连乘：
+
+$$
+P_\theta(y \mid x) = \prod_{t=1}^{T} P_\theta(y_t \mid x, y_{<t})
+$$
+
+其中 $y_{<t}$ 表示在写第 $t$ 个词元之前已经生成好的所有内容。
+
+两边取自然对数 $\ln$，连乘立刻变成了连加：
+
+$$
+\ln P_\theta(y \mid x) = \sum_{t=1}^{T} \ln P_\theta(y_t \mid x, y_{<t})
+$$
+
+<TokenChainSketch />
+
+取对数在这里还有个顺带的工程好处：假设回答有 100 个词，哪怕每一步的概率都是 $0.5$，直接连乘 $0.5^{100} \approx 7.9 \times 10^{-31}$，浮点数很容易下溢归零；取 $\ln$ 变成连加以后，每个词的对数概率都是温和的负数，加在一起既稳定又方便逐词求导。
+
+落到代码里，在 PyTorch 中优化器默认做的是梯度下降（最小化损失函数 $L(\theta)$），而我们要最大化 $J(\theta)$，所以在前面加一个负号，就得到了强化学习里最经典的策略梯度算法 **REINFORCE** 的损失函数：
+
+$$
+L(\theta) = -\frac{1}{N} \sum_{i=1}^{N} R(y_i)\, \ln P_\theta(y_i \mid x)
+$$
+
+<ReinforceDirectionSketch />
+
+写成代码，核心逻辑其实只有几行：
+
+```python
+log_probs = model.log_prob(prompt, answers)
+scores = judge(answers, numbers=[3, 7, 12], target=33)
+
+loss = -(scores.detach() * log_probs).mean()
+loss.backward()
+optimizer.step()
+```
+
+代码里 `scores.detach()` 的意思，就是告诉框架把裁判得分当成普通常数，不要试图对裁判求导。到这里，我们已经用纯基础微积分和概率论，把第一章那个问号彻底拆开了。
+
+公式推出来了，代码也只有几行，但在直接拿去训练之前，可以先停下来想一个很现实的隐患：
+
+在 $R(y) \in \{0, 1\}$ 的打分下，做对的回答得分是 $1$，损失是 $-\ln P_\theta(y \mid x)$，模型会拉高它的概率；可做错的回答得分是 $0$，乘进去之后梯度直接归零，模型**并不会主动去压低做错的回答**。
+
+更极端一点：如果我把所有得分统一加上 $10$（对了得 $11$，错了得 $10$），直觉上“好回答还是比坏回答高 1 分”，但代进上面的公式，连做错的回答都会拿到 $+10$ 的正向权重，被模型拼命往上拉。
+
+这背后的原因是什么，又该怎么用大一统计里的均值和标准差把它修好？我们在下一节里继续拆解。
