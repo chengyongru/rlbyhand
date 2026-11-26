@@ -1,20 +1,11 @@
 import { useRef } from 'react';
-import {
-  Badge,
-  Box,
-  Button,
-  Group,
-  Paper,
-  Progress,
-  ScrollArea,
-  Stack,
-  Text,
-} from '@mantine/core';
-import { Download, Upload } from 'lucide-react';
+import { Box, Button, Group, Progress, ScrollArea, Stack, Text } from '@mantine/core';
+import { Download, Upload } from 'reicon-react';
 import { isValidRunLog } from '../api/client';
 import { pickText, UI_STRINGS } from '../i18n';
 import { useLabStore } from '../store/useLabStore';
 import type { RunLog } from '../types/lab';
+import { LabIcon } from './LabIcon';
 
 interface TelemetryConsoleProps {
   activeRun: RunLog | undefined;
@@ -64,73 +55,52 @@ export function TelemetryConsole({ activeRun }: TelemetryConsoleProps) {
   };
 
   return (
-    <Stack gap="sm">
-      {/* 8GB VRAM Ledger */}
-      <Paper p="sm" style={{ backgroundColor: 'var(--lab-surface)' }}>
-        <Group justify="space-between" mb={8} wrap="wrap">
-          <Text size="xs" fw={600}>
+    <Stack gap={32}>
+      {/* Section 1: 8 GB VRAM Ledger (flat neutral surface, single accent bar) */}
+      <Box p={24} style={{ backgroundColor: 'var(--lab-surface)', borderRadius: 16 }}>
+        <Group justify="space-between" mb={16} wrap="wrap">
+          <Text fz={18} fw={600} style={{ color: 'var(--lab-text)' }}>
             {pickText(UI_STRINGS.vramLedgerTitle, lang)}
           </Text>
-          <Badge size="xs" color={peakVram !== undefined && peakVram > 6.8 ? 'red' : 'teal'} ff="monospace">
-            {pickText(UI_STRINGS.kpiVram, lang)}: {peakVram === undefined ? '—' : `${peakVram.toFixed(2)} GB`}
-          </Badge>
+          <Text fz={16} fw={600} ff="monospace" className="tabular-nums" style={{ color: 'var(--lab-accent)' }}>
+            {peakVram === undefined ? '—' : `${peakVram.toFixed(2)} / ${totalBudget.toFixed(1)} GB`}
+          </Text>
         </Group>
 
-        <Progress.Root size={14} radius="xs" mb="sm">
-          <Progress.Section value={pct(baseGb)} color="cobalt" />
-          <Progress.Section value={pct(loraGb)} color="teal" />
-          <Progress.Section value={pct(actGb)} color="orange" />
-          <Progress.Section value={pct(sysGb)} color="gray" />
+        <Progress.Root size={12} radius="sm" mb={20}>
+          <Progress.Section value={pct(baseGb)} color="accent" />
+          <Progress.Section value={pct(loraGb)} color="dark.4" />
+          <Progress.Section value={pct(actGb)} color="gray.6" />
+          <Progress.Section value={pct(sysGb)} color="gray.4" />
         </Progress.Root>
 
-        <Group gap="md" wrap="wrap">
-          <Group gap={6}>
-            <Box w={9} h={9} style={{ borderRadius: 2, background: '#1d4ed8' }} />
-            <Text size="11px" ff="monospace">
-              {pickText(UI_STRINGS.vramBase, lang)}: {baseGb.toFixed(1)} GB
-            </Text>
-          </Group>
-          <Group gap={6}>
-            <Box w={9} h={9} style={{ borderRadius: 2, background: '#059669' }} />
-            <Text size="11px" ff="monospace">
-              {pickText(UI_STRINGS.vramLora, lang)}: {loraGb.toFixed(1)} GB
-            </Text>
-          </Group>
-          <Group gap={6}>
-            <Box w={9} h={9} style={{ borderRadius: 2, background: '#0f766e', border: '1px dashed #94a3b8' }} />
-            <Text size="11px" ff="monospace">
-              {pickText(UI_STRINGS.vramRef, lang)}: 0.0 GB
-            </Text>
-          </Group>
-          <Group gap={6}>
-            <Box w={9} h={9} style={{ borderRadius: 2, background: '#d97706' }} />
-            <Text size="11px" ff="monospace">
-              {pickText(UI_STRINGS.vramAct, lang)}: {actGb.toFixed(2)} GB
-            </Text>
-          </Group>
-          <Group gap={6}>
-            <Box w={9} h={9} style={{ borderRadius: 2, background: '#868e96' }} />
-            <Text size="11px" ff="monospace">
-              {pickText(UI_STRINGS.vramSys, lang)}: {sysGb.toFixed(1)} GB
-            </Text>
-          </Group>
+        <Group gap={24} wrap="wrap">
+          <Text fz={14} ff="monospace" style={{ color: 'var(--lab-text)' }}>
+            {pickText(UI_STRINGS.vramBase, lang)} {baseGb.toFixed(1)} GB
+          </Text>
+          <Text fz={14} ff="monospace" style={{ color: 'var(--lab-muted)' }}>
+            {pickText(UI_STRINGS.vramLora, lang)} {loraGb.toFixed(1)} GB
+          </Text>
+          <Text fz={14} ff="monospace" style={{ color: 'var(--lab-muted)' }}>
+            {pickText(UI_STRINGS.vramRef, lang)} 0.0 GB
+          </Text>
+          <Text fz={14} ff="monospace" style={{ color: 'var(--lab-muted)' }}>
+            {pickText(UI_STRINGS.vramAct, lang)} {actGb.toFixed(2)} GB
+          </Text>
+          <Text fz={14} ff="monospace" style={{ color: 'var(--lab-muted)' }}>
+            {pickText(UI_STRINGS.vramSys, lang)} {sysGb.toFixed(1)} GB
+          </Text>
         </Group>
-      </Paper>
+      </Box>
 
-      {/* Run JSON Import / Export */}
-      <Paper p="sm" style={{ backgroundColor: 'var(--lab-surface)' }}>
-        <Group justify="space-between" wrap="wrap" gap={8}>
-          <Box>
-            <Text size="xs" fw={600}>
-              {lang === 'zh' ? '统一实验日志格式 (Schema v1.0)' : 'Unified Run Log Schema (v1.0)'}
-            </Text>
-            <Text size="11px" c="dimmed">
-              {lang === 'zh'
-                ? '本地 GPU 跑出的 runs/*.json 可直接拖入网页复盘或替换静态演示数据。'
-                : 'Load any `runs/*.json` generated on your home GPU directly into the browser workbench.'}
-            </Text>
-          </Box>
-          <Group gap={8}>
+      {/* Section 2: Execution Log with intent-revealed Import/Export actions */}
+      <Box className="intent-zone" p={24} style={{ backgroundColor: 'var(--lab-surface)', borderRadius: 16 }}>
+        <Group justify="space-between" mb={16} wrap="wrap" gap={12}>
+          <Text fz={18} fw={600} style={{ color: 'var(--lab-text)' }}>
+            {pickText(UI_STRINGS.consoleTitle, lang)}
+          </Text>
+
+          <Group gap={8} className="intent-controls">
             <input
               ref={fileInputRef}
               type="file"
@@ -139,63 +109,56 @@ export function TelemetryConsole({ activeRun }: TelemetryConsoleProps) {
               onChange={handleImportFile}
             />
             <Button
-              size="compact-xs"
-              variant="default"
-              leftSection={<Upload size={12} />}
+              size="sm"
+              variant="subtle"
+              color="gray"
+              leftSection={<LabIcon icon={Upload} color="var(--lab-muted)" />}
               onClick={() => fileInputRef.current?.click()}
+              styles={{ root: { height: 36, fontWeight: 500, color: 'var(--lab-text)' } }}
             >
               {pickText(UI_STRINGS.importJson, lang)}
             </Button>
             <Button
-              size="compact-xs"
-              variant="default"
-              leftSection={<Download size={12} />}
+              size="sm"
+              variant="subtle"
+              color="gray"
+              leftSection={<LabIcon icon={Download} color="var(--lab-muted)" />}
               onClick={handleExport}
               disabled={!activeRun}
+              styles={{ root: { height: 36, fontWeight: 500, color: 'var(--lab-text)' } }}
             >
               {pickText(UI_STRINGS.exportJson, lang)}
             </Button>
           </Group>
         </Group>
-      </Paper>
 
-      {/* Execution Console */}
-      <Paper p="sm" style={{ backgroundColor: 'var(--lab-surface)' }}>
-        <Text size="xs" fw={600} mb={6}>
-          {pickText(UI_STRINGS.consoleTitle, lang)}
-        </Text>
-        <ScrollArea h={230} type="auto">
-          <Stack gap={4}>
+        <ScrollArea h={240} type="auto">
+          <Stack gap={8}>
             {logs.map((entry) => (
-              <Group key={entry.id} gap={8} wrap="nowrap" align="flex-start">
-                <Text size="11px" ff="monospace" c="dimmed" style={{ flexShrink: 0 }}>
+              <Group key={entry.id} gap={12} wrap="nowrap" align="flex-start">
+                <Text fz={13} ff="monospace" style={{ color: 'var(--lab-muted)', flexShrink: 0 }}>
                   {entry.ts}
                 </Text>
-                <Badge
-                  size="xs"
-                  variant="light"
-                  color={
-                    entry.level === 'ok'
-                      ? 'teal'
-                      : entry.level === 'warn'
-                        ? 'orange'
-                        : entry.level === 'error'
-                          ? 'red'
-                          : 'gray'
-                  }
-                  w={46}
-                  style={{ flexShrink: 0 }}
+                <Text
+                  fz={13}
+                  fw={600}
+                  ff="monospace"
+                  w={48}
+                  style={{
+                    color: entry.level === 'ok' ? 'var(--lab-accent)' : 'var(--lab-muted)',
+                    flexShrink: 0,
+                  }}
                 >
                   {entry.level.toUpperCase()}
-                </Badge>
-                <Text size="11px" ff="monospace" style={{ wordBreak: 'break-word' }}>
+                </Text>
+                <Text fz={13} ff="monospace" style={{ color: 'var(--lab-text)', wordBreak: 'break-word' }}>
                   {entry.message}
                 </Text>
               </Group>
             ))}
           </Stack>
         </ScrollArea>
-      </Paper>
+      </Box>
     </Stack>
   );
 }

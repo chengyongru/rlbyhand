@@ -22,17 +22,16 @@ export function MathBlock({ tex, caption }: MathBlockProps) {
 
   return (
     <Box
-      my="sm"
-      p="sm"
+      my={20}
+      p={20}
       style={{
-        backgroundColor: 'var(--lab-formula-bg)',
-        border: '1px solid var(--lab-border)',
-        borderRadius: 4,
+        backgroundColor: 'var(--lab-surface)',
+        borderRadius: 12,
       }}
     >
       <div dangerouslySetInnerHTML={{ __html: html }} />
       {caption && (
-        <Text size="xs" c="dimmed" mt={6} lh={1.55}>
+        <Text fz={14} mt={12} lh={1.6} style={{ color: 'var(--lab-muted)' }}>
           {caption}
         </Text>
       )}

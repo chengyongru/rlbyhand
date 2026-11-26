@@ -1,5 +1,4 @@
 import {
-  Badge,
   Box,
   Button,
   Group,
@@ -11,13 +10,14 @@ import {
   Tabs,
   Text,
 } from '@mantine/core';
-import { Activity, Code2, Cpu, Microscope, Pause, Play, Square } from 'lucide-react';
+import { Activity, Code, Cpu, Microscope, Pause, Play, Stop } from 'reicon-react';
 import { postStartTrain, postStopTrain } from '../api/client';
 import { pickText, PRESET_LABELS, UI_STRINGS } from '../i18n';
 import { LESSONS } from '../i18n/lessons';
 import { useLabStore } from '../store/useLabStore';
 import type { RunLog } from '../types/lab';
 import { CodeSurgeryTab } from './CodeSurgeryTab';
+import { LabIcon } from './LabIcon';
 import { MetricsDashboard } from './MetricsDashboard';
 import { RolloutMicroscope } from './RolloutMicroscope';
 import { TelemetryConsole } from './TelemetryConsole';
@@ -57,10 +57,12 @@ export function WorkbenchPane() {
 
   const sourceLabel = (run?: RunLog) => {
     const mock = run?.metadata.is_mock;
-    return pickText(mock === true ? UI_STRINGS.mockData : mock === false ? UI_STRINGS.gpuData : UI_STRINGS.unknownSource, lang);
+    return pickText(
+      mock === true ? UI_STRINGS.mockData : mock === false ? UI_STRINGS.gpuData : UI_STRINGS.unknownSource,
+      lang
+    );
   };
 
-  // Build preset dropdown options (all demo presets + any imported/live runs)
   const presetOptions = Object.keys(runs).map((id) => ({
     value: id,
     label: PRESET_LABELS[id] ? pickText(PRESET_LABELS[id], lang) : `Custom · ${id}`,
@@ -91,7 +93,6 @@ export function WorkbenchPane() {
       return;
     }
 
-    // Static Replay mode: toggle timeline playback
     if (!isPlaying && clampedIdx >= totalSteps - 1) {
       setStepIndex(0);
     }
@@ -107,42 +108,43 @@ export function WorkbenchPane() {
         backgroundColor: 'var(--lab-bg)',
       }}
     >
-      {/* Persistent Experiment Control Strip */}
-      <Box
-        px="md"
-        py={8}
-        style={{
-          backgroundColor: 'var(--lab-surface)',
-          borderBottom: '1px solid var(--lab-border)',
-          flexShrink: 0,
-        }}
-      >
-        <Group justify="space-between" gap={8} wrap="wrap" mb={8}>
-          <Group gap={8} wrap="wrap">
+      {/* Borderless Experiment Control Strip (single row, 4px grid, 90:10 accent discipline) */}
+      <Box px={24} pt={12} pb={8} style={{ flexShrink: 0 }}>
+        <Group justify="space-between" gap={12} wrap="nowrap" mb={12}>
+          <Group gap={12} wrap="nowrap" style={{ minWidth: 0 }}>
             <Select
-              size="xs"
-              w={265}
+              size="sm"
+              w={224}
               value={activePresetId}
               onChange={(v) => v && setActivePreset(v)}
               data={presetOptions}
               aria-label={pickText(UI_STRINGS.presetLabel, lang)}
+              styles={{
+                input: {
+                  backgroundColor: 'var(--lab-surface)',
+                  border: 'none',
+                  fontSize: 14,
+                  fontWeight: 500,
+                },
+              }}
             />
-            <Badge size="sm" variant="light" color={activeRun?.metadata.is_mock === false ? 'teal' : 'gray'}>
+            <Text fz={13} style={{ color: 'var(--lab-muted)', whiteSpace: 'nowrap' }}>
               {sourceLabel(activeRun)}
-            </Badge>
+            </Text>
             <Switch
               size="xs"
+              color="dark"
               checked={compareBaseline}
               onChange={(e) => setCompareBaseline(e.currentTarget.checked)}
               label={
-                <Text size="xs">
-                  {pickText(UI_STRINGS.compareBaseline, lang)}{compareBaseline && ` · ${sourceLabel(baselineRun)}`}
+                <Text fz={13} style={{ color: 'var(--lab-muted)', whiteSpace: 'nowrap' }}>
+                  {pickText(UI_STRINGS.compareBaseline, lang)}
                 </Text>
               }
             />
           </Group>
 
-          <Group gap={8} wrap="nowrap">
+          <Group gap={8} wrap="nowrap" style={{ flexShrink: 0 }}>
             {localConnected && (
               <SegmentedControl
                 size="xs"
@@ -155,22 +157,25 @@ export function WorkbenchPane() {
               />
             )}
             <Button
-              size="compact-xs"
-              color={isTraining ? 'red' : 'cobalt'}
+              size="sm"
+              color={isTraining ? 'dark' : 'accent'}
               leftSection={
-                localConnected ? (
-                  isTraining ? (
-                    <Square size={12} />
-                  ) : (
-                    <Play size={12} />
-                  )
-                ) : isPlaying ? (
-                  <Pause size={12} />
-                ) : (
-                  <Play size={12} />
-                )
+                <LabIcon
+                  icon={
+                    localConnected
+                      ? isTraining
+                        ? Stop
+                        : Play
+                      : isPlaying
+                        ? Pause
+                        : Play
+                  }
+                  color="#ffffff"
+                />
               }
               onClick={handleTogglePlayOrTrain}
+              px={16}
+              styles={{ root: { height: 36, fontWeight: 500 } }}
             >
               {localConnected
                 ? isTraining
@@ -183,14 +188,15 @@ export function WorkbenchPane() {
           </Group>
         </Group>
 
-        {/* Synchronized Step Scrubber */}
-        <Group gap="sm" align="center" wrap="nowrap">
-          <Text size="11px" ff="monospace" c="dimmed" className="tabular-nums" miw={84}>
+        {/* Synchronized Step Scrubber (neutral dark bar so only primary CTA & data use accent) */}
+        <Group gap={16} align="center" wrap="nowrap">
+          <Text fz={13} ff="monospace" className="tabular-nums" miw={84} style={{ color: 'var(--lab-muted)' }}>
             {pickText(UI_STRINGS.stepLabel, lang)} {currentStepLog?.step ?? 0}
           </Text>
           <Slider
             style={{ flex: 1 }}
             size="xs"
+            color="dark"
             min={0}
             max={Math.max(0, totalSteps - 1)}
             value={clampedIdx}
@@ -200,51 +206,49 @@ export function WorkbenchPane() {
             }}
             label={(idx) => `Step ${activeRun?.steps[idx]?.step ?? idx}`}
           />
-          <Text size="11px" ff="monospace" c="dimmed" className="tabular-nums" miw={52} ta="right">
+          <Text fz={13} ff="monospace" className="tabular-nums" miw={56} ta="right" style={{ color: 'var(--lab-muted)' }}>
             {clampedIdx + 1} / {totalSteps}
           </Text>
         </Group>
       </Box>
 
-      {/* Workbench Tabs */}
+      {/* Clean Minimal Neutral Tabs (active state uses neutral surface, not blue slab) */}
       <Tabs
         value={activeTab}
         onChange={(v) => v && setActiveTab(v)}
+        variant="pills"
+        radius="sm"
+        className="lab-tabs"
         style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}
       >
-        <Tabs.List
-          px="md"
-          style={{
-            backgroundColor: 'var(--lab-surface)',
-            borderBottom: '1px solid var(--lab-border)',
-            flexShrink: 0,
-          }}
-        >
-          <Tabs.Tab value="dashboard" leftSection={<Activity size={14} />}>
-            <Text size="xs" fw={500}>
+        <Tabs.List px={24} py={8} style={{ gap: 8, flexShrink: 0 }}>
+          <Tabs.Tab value="dashboard" leftSection={<LabIcon icon={Activity} />}>
+            <Text fz={14} fw={activeTab === 'dashboard' ? 600 : 400}>
               {pickText(UI_STRINGS.tabDashboard, lang)}
             </Text>
           </Tabs.Tab>
-          <Tabs.Tab value="microscope" leftSection={<Microscope size={14} />}>
-            <Text size="xs" fw={500}>
+          <Tabs.Tab value="microscope" leftSection={<LabIcon icon={Microscope} />}>
+            <Text fz={14} fw={activeTab === 'microscope' ? 600 : 400}>
               {pickText(UI_STRINGS.tabMicroscope, lang)}
             </Text>
           </Tabs.Tab>
-          <Tabs.Tab value="code" leftSection={<Code2 size={14} />}>
-            <Text size="xs" fw={500}>
+          <Tabs.Tab value="code" leftSection={<LabIcon icon={Code} />}>
+            <Text fz={14} fw={activeTab === 'code' ? 600 : 400}>
               {pickText(UI_STRINGS.tabCode, lang)}
             </Text>
           </Tabs.Tab>
-          <Tabs.Tab value="console" leftSection={<Cpu size={14} />}>
-            <Text size="xs" fw={500}>
+          <Tabs.Tab value="console" leftSection={<LabIcon icon={Cpu} />}>
+            <Text fz={14} fw={activeTab === 'console' ? 600 : 400}>
               {pickText(UI_STRINGS.tabConsole, lang)}
             </Text>
           </Tabs.Tab>
         </Tabs.List>
 
-        <ScrollArea style={{ flex: 1 }} p="md" offsetScrollbars>
+        <ScrollArea style={{ flex: 1 }} px={24} py={20} offsetScrollbars>
           <Tabs.Panel value="dashboard">
-            {activeTab === 'dashboard' && <MetricsDashboard activeRun={activeRun} baselineRun={baselineRun} />}
+            {activeTab === 'dashboard' && (
+              <MetricsDashboard activeRun={activeRun} baselineRun={baselineRun} />
+            )}
           </Tabs.Panel>
           <Tabs.Panel value="microscope">
             <RolloutMicroscope stepLog={currentStepLog} />

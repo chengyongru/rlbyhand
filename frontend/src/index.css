@@ -1,31 +1,33 @@
 @import 'katex/dist/katex.min.css';
 
 :root {
-  --lab-bg: #faf9f6;
-  --lab-surface: #ffffff;
-  --lab-subtle: #f4f4f2;
-  --lab-border: #e4e4e7;
-  --lab-text: #18181b;
-  --lab-muted: #52525b;
-  --lab-formula-bg: #f6f7f9;
-  --lab-diff-add-bg: #ecfdf5;
-  --lab-diff-add-fg: #065f46;
-  --lab-diff-del-bg: #fef2f2;
-  --lab-diff-del-fg: #991b1b;
+  --lab-bg: #ffffff;
+  --lab-surface: #f5f5f7;
+  --lab-surface-hover: #ebebef;
+  --lab-border: rgba(24, 24, 24, 0.08);
+  --lab-text: #181818;
+  --lab-muted: #6a6a6a;
+  --lab-accent: #0071e3;
+  --lab-accent-soft: rgba(0, 113, 227, 0.08);
+  --lab-diff-add-bg: rgba(0, 113, 227, 0.08);
+  --lab-diff-add-fg: #005ec2;
+  --lab-diff-del-bg: rgba(24, 24, 24, 0.06);
+  --lab-diff-del-fg: #6a6a6a;
 }
 
 [data-mantine-color-scheme='dark'] {
-  --lab-bg: #0d1117;
-  --lab-surface: #161b22;
-  --lab-subtle: #1c2128;
-  --lab-border: #2a313c;
-  --lab-text: #e6edf3;
-  --lab-muted: #8b949e;
-  --lab-formula-bg: #12171e;
-  --lab-diff-add-bg: rgba(16, 185, 129, 0.14);
-  --lab-diff-add-fg: #6ee7b7;
-  --lab-diff-del-bg: rgba(239, 68, 68, 0.14);
-  --lab-diff-del-fg: #fca5a5;
+  --lab-bg: #0f0f10;
+  --lab-surface: #18181b;
+  --lab-surface-hover: #222226;
+  --lab-border: rgba(255, 255, 255, 0.09);
+  --lab-text: #f2f2f2;
+  --lab-muted: #9a9a9e;
+  --lab-accent: #2997ff;
+  --lab-accent-soft: rgba(41, 151, 255, 0.14);
+  --lab-diff-add-bg: rgba(41, 151, 255, 0.14);
+  --lab-diff-add-fg: #7cc0ff;
+  --lab-diff-del-bg: rgba(255, 255, 255, 0.06);
+  --lab-diff-del-fg: #9a9a9e;
 }
 
 * {
@@ -40,6 +42,7 @@ body,
   padding: 0;
   background-color: var(--lab-bg);
   color: var(--lab-text);
+  font-family: "Geist Sans", -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -47,43 +50,57 @@ body,
   font-variant-numeric: tabular-nums;
 }
 
+/* 4px-grid resize gutter without harsh dividing lines */
 .lab-resize-handle {
-  width: 5px;
+  width: 8px;
   background: transparent;
   position: relative;
-  transition: background-color 120ms ease;
   cursor: col-resize;
 }
 
 .lab-resize-handle::after {
   content: '';
   position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 2px;
-  width: 1px;
-  background: var(--lab-border);
+  top: 24px;
+  bottom: 24px;
+  left: 3px;
+  width: 2px;
+  border-radius: 4px;
+  background: transparent;
+  transition: background-color 140ms ease;
 }
 
 .lab-resize-handle:hover::after,
 .lab-resize-handle[data-resize-handle-active]::after {
-  background: #2563eb;
-  width: 2px;
-  left: 1.5px;
+  background: var(--lab-accent);
 }
 
 .katex-display {
-  margin: 0.4rem 0 !important;
+  margin: 0 !important;
   overflow-x: auto;
   overflow-y: hidden;
-  padding: 0.2rem 0;
+  padding: 4px 0;
+}
+
+/* Intent-based secondary controls: hidden until hover/focus in the working zone */
+.intent-zone .intent-controls {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 150ms ease;
+}
+
+.intent-zone:hover .intent-controls,
+.intent-zone:focus-within .intent-controls {
+  opacity: 1;
+  pointer-events: auto;
 }
 
 .diff-line {
-  font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 12px;
-  line-height: 1.55;
-  padding: 1px 10px;
+  font-family: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 13px;
+  line-height: 1.6;
+  padding: 4px 12px;
+  border-radius: 8px;
   white-space: pre-wrap;
   word-break: break-all;
 }
@@ -96,6 +113,7 @@ body,
 .diff-line-del {
   background-color: var(--lab-diff-del-bg);
   color: var(--lab-diff-del-fg);
+  text-decoration: line-through;
 }
 
 .diff-line-ctx {
@@ -104,16 +122,34 @@ body,
 
 .token-chip {
   display: inline-block;
-  font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 12px;
-  padding: 2px 4px;
-  margin: 2px 1.5px;
-  border-radius: 3px;
+  font-family: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 13px;
+  padding: 4px 6px;
+  margin: 2px;
+  border-radius: 8px;
   cursor: pointer;
-  border: 1px solid transparent;
-  transition: border-color 100ms ease, transform 80ms ease;
+  transition: background-color 120ms ease;
 }
 
 .token-chip:hover {
-  border-color: #2563eb;
+  outline: 1.5px solid var(--lab-accent);
+}
+
+/* Neutral pill tabs adhering to 90:10 neutral/accent ratio */
+.lab-tabs .mantine-Tabs-tab {
+  color: var(--lab-muted);
+  background-color: transparent;
+  height: 36px;
+  padding: 0 16px 0 12px;
+  border-radius: 8px;
+}
+
+.lab-tabs .mantine-Tabs-tab:hover {
+  background-color: var(--lab-surface);
+  color: var(--lab-text);
+}
+
+.lab-tabs .mantine-Tabs-tab[data-active] {
+  background-color: var(--lab-surface);
+  color: var(--lab-text);
 }
