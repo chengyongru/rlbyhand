@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Box, Group, Paper, SimpleGrid, Text, useComputedColorScheme } from '@mantine/core';
+import { Box, SimpleGrid, Text, useComputedColorScheme } from '@mantine/core';
 import {
   CartesianGrid,
   Legend,
@@ -23,29 +23,33 @@ interface MetricsDashboardProps {
 export function MetricsDashboard({ activeRun, baselineRun }: MetricsDashboardProps) {
   const { lang, stepIndex, setStepIndex, compareBaseline } = useLabStore();
   const scheme = useComputedColorScheme('light');
-  const gridColor = scheme === 'dark' ? '#262c36' : '#ecece9';
-  const axisColor = scheme === 'dark' ? '#8b949e' : '#71717a';
+  const gridColor = scheme === 'dark' ? 'rgba(255,255,255,0.06)' : 'rgba(24,24,24,0.06)';
+  const axisColor = scheme === 'dark' ? '#9a9a9e' : '#6a6a6a';
+  const primaryStroke = scheme === 'dark' ? '#2997ff' : '#0071e3';
+  const secondaryStroke = scheme === 'dark' ? '#d4d4d8' : '#181818';
+  const baselineStroke = scheme === 'dark' ? '#636366' : '#a1a1aa';
 
   const currentStepLog = activeRun?.steps[Math.min(stepIndex, (activeRun?.steps.length ?? 1) - 1)];
   const curStepNum = currentStepLog?.step ?? 0;
 
   const chartData = useMemo(() => {
     if (!activeRun) return [];
-    return activeRun.steps.map((s, idx) => {
-      const b = baselineRun?.steps[Math.min(idx, (baselineRun?.steps.length ?? 1) - 1)];
+    const baselineByStep = new Map(
+      compareBaseline ? baselineRun?.steps.map((s) => [s.step, s.metrics]) : []
+    );
+    return activeRun.steps.map((s) => {
+      const b = baselineByStep.get(s.step);
       return {
-        idx,
         step: s.step,
         accuracy: Number((s.metrics.accuracy * 100).toFixed(1)),
-        baseAccuracy:
-          compareBaseline && b ? Number((b.metrics.accuracy * 100).toFixed(1)) : undefined,
+        baseAccuracy: b ? Number((b.accuracy * 100).toFixed(1)) : undefined,
         meanReward: Number(s.metrics.mean_reward.toFixed(2)),
         length: s.metrics.mean_response_length,
-        baseLength: compareBaseline && b ? b.metrics.mean_response_length : undefined,
+        baseLength: b?.mean_response_length,
         entropy: s.metrics.entropy,
-        baseEntropy: compareBaseline && b ? b.metrics.entropy : undefined,
+        baseEntropy: b?.entropy,
         kl: s.metrics.kl_divergence,
-        baseKl: compareBaseline && b ? b.metrics.kl_divergence : undefined,
+        baseKl: b?.kl_divergence,
         clip: Number((s.metrics.clip_fraction * 100).toFixed(1)),
       };
     });
@@ -62,108 +66,117 @@ export function MetricsDashboard({ activeRun, baselineRun }: MetricsDashboardPro
   const kpis = [
     {
       label: pickText(UI_STRINGS.kpiAcc, lang),
-      value: m ? `${(m.accuracy * 100).toFixed(1)}%` : '--',
-      color: '#1d4ed8',
+      value: m ? `${(m.accuracy * 100).toFixed(1)}%` : '—',
+      accent: true,
     },
     {
       label: pickText(UI_STRINGS.kpiReward, lang),
-      value: m ? m.mean_reward.toFixed(2) : '--',
-      color: '#059669',
+      value: m ? m.mean_reward.toFixed(2) : '—',
+      accent: false,
     },
     {
       label: pickText(UI_STRINGS.kpiLen, lang),
-      value: m ? `${m.mean_response_length.toFixed(0)} tok` : '--',
-      color: undefined,
+      value: m ? `${m.mean_response_length.toFixed(0)}` : '—',
+      accent: false,
     },
     {
       label: pickText(UI_STRINGS.kpiEnt, lang),
-      value: m ? m.entropy.toFixed(3) : '--',
-      color: '#d97706',
+      value: m ? m.entropy.toFixed(3) : '—',
+      accent: false,
     },
     {
       label: pickText(UI_STRINGS.kpiKl, lang),
-      value: m ? m.kl_divergence.toFixed(3) : '--',
-      color: m && m.kl_divergence > 0.35 ? '#dc2626' : undefined,
+      value: m ? m.kl_divergence.toFixed(3) : '—',
+      accent: false,
     },
     {
       label: pickText(UI_STRINGS.kpiVram, lang),
-      value: m ? `${m.vram_peak_gb.toFixed(2)} GB` : '--',
-      color: m && m.vram_peak_gb > 6.5 ? '#dc2626' : '#059669',
+      value: m ? `${m.vram_peak_gb.toFixed(2)} GB` : '—',
+      accent: false,
     },
   ];
 
   const tooltipStyle = {
-    backgroundColor: scheme === 'dark' ? '#161b22' : '#ffffff',
-    border: `1px solid ${scheme === 'dark' ? '#30363d' : '#e4e4e7'}`,
-    borderRadius: 4,
+    backgroundColor: scheme === 'dark' ? '#18181b' : '#ffffff',
+    border: `1px solid ${scheme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(24,24,24,0.1)'}`,
+    borderRadius: 12,
     fontSize: 12,
-    fontFamily: 'var(--mantine-font-family-monospace)',
+    fontFamily: '"Geist Mono", monospace',
   };
 
   return (
     <Box>
-      {/* Top 6 KPI Strip */}
-      <SimpleGrid cols={{ base: 2, sm: 3, lg: 6 }} spacing={8} mb="sm">
+      {/* Borderless 6-column typographic KPI strip (90% neutral, 10% accent on primary Pass@1) */}
+      <SimpleGrid cols={{ base: 2, sm: 3, lg: 6 }} spacing={24} mb={24} px={4}>
         {kpis.map((item) => (
-          <Paper
-            key={item.label}
-            p="xs"
-            style={{ backgroundColor: 'var(--lab-surface)', borderColor: 'var(--lab-border)' }}
-          >
-            <Text size="11px" c="dimmed" truncate>
+          <Box key={item.label}>
+            <Text fz={14} fw={400} mb={4} truncate style={{ color: 'var(--lab-muted)' }}>
               {item.label}
             </Text>
             <Text
-              size="md"
-              fw={700}
+              fz={20}
+              fw={600}
               ff="monospace"
               className="tabular-nums"
-              style={{ color: item.color ?? 'var(--lab-text)' }}
+              style={{ color: item.accent ? 'var(--lab-accent)' : 'var(--lab-text)' }}
             >
               {item.value}
             </Text>
-          </Paper>
+          </Box>
         ))}
       </SimpleGrid>
 
-      {/* 2x2 Synchronized Telemetry Charts */}
-      <SimpleGrid cols={{ base: 1, lg: 2 }} spacing="sm">
+      {/* 2x2 Flat Borderless Telemetry Charts (20px spacing, 20px padding, 16px radius) */}
+      <SimpleGrid cols={{ base: 1, lg: 2 }} spacing={20}>
         {/* Chart 1: Accuracy & Reward */}
-        <Paper p="sm" style={{ backgroundColor: 'var(--lab-surface)' }}>
-          <Group justify="space-between" mb={6}>
-            <Text size="xs" fw={600}>
-              {pickText(UI_STRINGS.chartAccTitle, lang)}
-            </Text>
-            <Text size="11px" c="dimmed" ff="monospace">
-              % / reward
-            </Text>
-          </Group>
-          <Box h={195}>
+        <Box p={20} style={{ backgroundColor: 'var(--lab-surface)', borderRadius: 16 }}>
+          <Text fz={16} fw={600} mb={12} style={{ color: 'var(--lab-text)' }}>
+            {pickText(UI_STRINGS.chartAccTitle, lang)}
+          </Text>
+          <Box h={184}>
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={chartData} onClick={handleChartClick}>
-                <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
-                <XAxis dataKey="step" tick={{ fontSize: 11, fill: axisColor }} />
-                <YAxis yAxisId="left" domain={[0, 100]} tick={{ fontSize: 11, fill: axisColor }} width={34} />
+                <CartesianGrid strokeDasharray="3 3" stroke={gridColor} vertical={false} />
+                <XAxis
+                  type="number"
+                  dataKey="step"
+                  domain={['dataMin', 'dataMax']}
+                  allowDecimals={false}
+                  tick={{ fontSize: 12, fill: axisColor }}
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <YAxis
+                  yAxisId="left"
+                  domain={[0, 100]}
+                  tick={{ fontSize: 12, fill: axisColor }}
+                  width={36}
+                  axisLine={false}
+                  tickLine={false}
+                />
                 <YAxis
                   yAxisId="right"
                   orientation="right"
                   domain={[0, (dataMax: number) => (dataMax > 1.3 ? Math.ceil(dataMax) : 1.2)]}
-                  tick={{ fontSize: 11, fill: axisColor }}
+                  tick={{ fontSize: 12, fill: axisColor }}
                   width={36}
+                  axisLine={false}
+                  tickLine={false}
                 />
                 <Tooltip contentStyle={tooltipStyle} />
-                <Legend wrapperStyle={{ fontSize: 11 }} />
-                <ReferenceLine yAxisId="left" x={curStepNum} stroke="#1d4ed8" strokeDasharray="3 3" />
+                <Legend wrapperStyle={{ fontSize: 12, paddingTop: 8 }} />
+                <ReferenceLine yAxisId="left" x={curStepNum} stroke={primaryStroke} strokeDasharray="3 3" />
                 {compareBaseline && (
                   <Line
                     yAxisId="left"
                     type="monotone"
                     dataKey="baseAccuracy"
                     name={pickText(UI_STRINGS.legendBaseline, lang)}
-                    stroke="#94a3b8"
-                    strokeWidth={1.6}
+                    stroke={baselineStroke}
+                    strokeWidth={1.5}
                     strokeDasharray="4 4"
-                    dot={false}
+                    connectNulls
+                    dot={{ r: 2 }}
                     isAnimationActive={false}
                   />
                 )}
@@ -172,7 +185,7 @@ export function MetricsDashboard({ activeRun, baselineRun }: MetricsDashboardPro
                   type="monotone"
                   dataKey="accuracy"
                   name={`${pickText(UI_STRINGS.legendActive, lang)} (%)`}
-                  stroke="#1d4ed8"
+                  stroke={primaryStroke}
                   strokeWidth={2}
                   dot={false}
                   isAnimationActive={false}
@@ -182,44 +195,54 @@ export function MetricsDashboard({ activeRun, baselineRun }: MetricsDashboardPro
                   type="monotone"
                   dataKey="meanReward"
                   name={pickText(UI_STRINGS.legendReward, lang)}
-                  stroke="#059669"
-                  strokeWidth={1.6}
+                  stroke={secondaryStroke}
+                  strokeWidth={1.5}
                   dot={false}
                   isAnimationActive={false}
                 />
               </LineChart>
             </ResponsiveContainer>
           </Box>
-        </Paper>
+        </Box>
 
         {/* Chart 2: Response Length */}
-        <Paper p="sm" style={{ backgroundColor: 'var(--lab-surface)' }}>
-          <Group justify="space-between" mb={6}>
-            <Text size="xs" fw={600}>
-              {pickText(UI_STRINGS.chartLenTitle, lang)}
-            </Text>
-            <Text size="11px" c="dimmed" ff="monospace">
-              max=256
-            </Text>
-          </Group>
-          <Box h={195}>
+        <Box p={20} style={{ backgroundColor: 'var(--lab-surface)', borderRadius: 16 }}>
+          <Text fz={16} fw={600} mb={12} style={{ color: 'var(--lab-text)' }}>
+            {pickText(UI_STRINGS.chartLenTitle, lang)}
+          </Text>
+          <Box h={184}>
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={chartData} onClick={handleChartClick}>
-                <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
-                <XAxis dataKey="step" tick={{ fontSize: 11, fill: axisColor }} />
-                <YAxis domain={[0, 260]} tick={{ fontSize: 11, fill: axisColor }} width={34} />
+                <CartesianGrid strokeDasharray="3 3" stroke={gridColor} vertical={false} />
+                <XAxis
+                  type="number"
+                  dataKey="step"
+                  domain={['dataMin', 'dataMax']}
+                  allowDecimals={false}
+                  tick={{ fontSize: 12, fill: axisColor }}
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <YAxis
+                  domain={[0, activeRun?.metadata.max_new_tokens ?? 260]}
+                  tick={{ fontSize: 12, fill: axisColor }}
+                  width={36}
+                  axisLine={false}
+                  tickLine={false}
+                />
                 <Tooltip contentStyle={tooltipStyle} />
-                <Legend wrapperStyle={{ fontSize: 11 }} />
-                <ReferenceLine x={curStepNum} stroke="#1d4ed8" strokeDasharray="3 3" />
+                <Legend wrapperStyle={{ fontSize: 12, paddingTop: 8 }} />
+                <ReferenceLine x={curStepNum} stroke={primaryStroke} strokeDasharray="3 3" />
                 {compareBaseline && (
                   <Line
                     type="monotone"
                     dataKey="baseLength"
                     name={pickText(UI_STRINGS.legendBaseline, lang)}
-                    stroke="#94a3b8"
-                    strokeWidth={1.6}
+                    stroke={baselineStroke}
+                    strokeWidth={1.5}
                     strokeDasharray="4 4"
-                    dot={false}
+                    connectNulls
+                    dot={{ r: 2 }}
                     isAnimationActive={false}
                   />
                 )}
@@ -227,7 +250,7 @@ export function MetricsDashboard({ activeRun, baselineRun }: MetricsDashboardPro
                   type="monotone"
                   dataKey="length"
                   name={pickText(UI_STRINGS.legendActive, lang)}
-                  stroke="#0f766e"
+                  stroke={primaryStroke}
                   strokeWidth={2}
                   dot={false}
                   isAnimationActive={false}
@@ -235,36 +258,45 @@ export function MetricsDashboard({ activeRun, baselineRun }: MetricsDashboardPro
               </LineChart>
             </ResponsiveContainer>
           </Box>
-        </Paper>
+        </Box>
 
         {/* Chart 3: Policy Entropy */}
-        <Paper p="sm" style={{ backgroundColor: 'var(--lab-surface)' }}>
-          <Group justify="space-between" mb={6}>
-            <Text size="xs" fw={600}>
-              {pickText(UI_STRINGS.chartEntTitle, lang)}
-            </Text>
-            <Text size="11px" c="dimmed" ff="monospace">
-              H(π)
-            </Text>
-          </Group>
-          <Box h={195}>
+        <Box p={20} style={{ backgroundColor: 'var(--lab-surface)', borderRadius: 16 }}>
+          <Text fz={16} fw={600} mb={12} style={{ color: 'var(--lab-text)' }}>
+            {pickText(UI_STRINGS.chartEntTitle, lang)}
+          </Text>
+          <Box h={184}>
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={chartData} onClick={handleChartClick}>
-                <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
-                <XAxis dataKey="step" tick={{ fontSize: 11, fill: axisColor }} />
-                <YAxis tick={{ fontSize: 11, fill: axisColor }} width={34} />
+                <CartesianGrid strokeDasharray="3 3" stroke={gridColor} vertical={false} />
+                <XAxis
+                  type="number"
+                  dataKey="step"
+                  domain={['dataMin', 'dataMax']}
+                  allowDecimals={false}
+                  tick={{ fontSize: 12, fill: axisColor }}
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <YAxis
+                  tick={{ fontSize: 12, fill: axisColor }}
+                  width={36}
+                  axisLine={false}
+                  tickLine={false}
+                />
                 <Tooltip contentStyle={tooltipStyle} />
-                <Legend wrapperStyle={{ fontSize: 11 }} />
-                <ReferenceLine x={curStepNum} stroke="#1d4ed8" strokeDasharray="3 3" />
+                <Legend wrapperStyle={{ fontSize: 12, paddingTop: 8 }} />
+                <ReferenceLine x={curStepNum} stroke={primaryStroke} strokeDasharray="3 3" />
                 {compareBaseline && (
                   <Line
                     type="monotone"
                     dataKey="baseEntropy"
                     name={pickText(UI_STRINGS.legendBaseline, lang)}
-                    stroke="#94a3b8"
-                    strokeWidth={1.6}
+                    stroke={baselineStroke}
+                    strokeWidth={1.5}
                     strokeDasharray="4 4"
-                    dot={false}
+                    connectNulls
+                    dot={{ r: 2 }}
                     isAnimationActive={false}
                   />
                 )}
@@ -272,7 +304,7 @@ export function MetricsDashboard({ activeRun, baselineRun }: MetricsDashboardPro
                   type="monotone"
                   dataKey="entropy"
                   name={pickText(UI_STRINGS.legendActive, lang)}
-                  stroke="#d97706"
+                  stroke={primaryStroke}
                   strokeWidth={2}
                   dot={false}
                   isAnimationActive={false}
@@ -280,38 +312,56 @@ export function MetricsDashboard({ activeRun, baselineRun }: MetricsDashboardPro
               </LineChart>
             </ResponsiveContainer>
           </Box>
-        </Paper>
+        </Box>
 
         {/* Chart 4: KL Divergence & Clip Fraction */}
-        <Paper p="sm" style={{ backgroundColor: 'var(--lab-surface)' }}>
-          <Group justify="space-between" mb={6}>
-            <Text size="xs" fw={600}>
-              {pickText(UI_STRINGS.chartKlTitle, lang)}
-            </Text>
-            <Text size="11px" c="dimmed" ff="monospace">
-              k3 / clip%
-            </Text>
-          </Group>
-          <Box h={195}>
+        <Box p={20} style={{ backgroundColor: 'var(--lab-surface)', borderRadius: 16 }}>
+          <Text fz={16} fw={600} mb={12} style={{ color: 'var(--lab-text)' }}>
+            {pickText(UI_STRINGS.chartKlTitle, lang)}
+          </Text>
+          <Box h={184}>
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={chartData} onClick={handleChartClick}>
-                <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
-                <XAxis dataKey="step" tick={{ fontSize: 11, fill: axisColor }} />
-                <YAxis yAxisId="left" tick={{ fontSize: 11, fill: axisColor }} width={36} />
-                <YAxis yAxisId="right" orientation="right" domain={[0, 40]} tick={{ fontSize: 11, fill: axisColor }} width={34} />
+                <CartesianGrid strokeDasharray="3 3" stroke={gridColor} vertical={false} />
+                <XAxis
+                  type="number"
+                  dataKey="step"
+                  domain={['dataMin', 'dataMax']}
+                  allowDecimals={false}
+                  tick={{ fontSize: 12, fill: axisColor }}
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <YAxis
+                  yAxisId="left"
+                  tick={{ fontSize: 12, fill: axisColor }}
+                  width={36}
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <YAxis
+                  yAxisId="right"
+                  orientation="right"
+                  domain={[0, 40]}
+                  tick={{ fontSize: 12, fill: axisColor }}
+                  width={36}
+                  axisLine={false}
+                  tickLine={false}
+                />
                 <Tooltip contentStyle={tooltipStyle} />
-                <Legend wrapperStyle={{ fontSize: 11 }} />
-                <ReferenceLine yAxisId="left" x={curStepNum} stroke="#1d4ed8" strokeDasharray="3 3" />
+                <Legend wrapperStyle={{ fontSize: 12, paddingTop: 8 }} />
+                <ReferenceLine yAxisId="left" x={curStepNum} stroke={primaryStroke} strokeDasharray="3 3" />
                 {compareBaseline && (
                   <Line
                     yAxisId="left"
                     type="monotone"
                     dataKey="baseKl"
                     name={pickText(UI_STRINGS.legendBaseline, lang)}
-                    stroke="#94a3b8"
-                    strokeWidth={1.6}
+                    stroke={baselineStroke}
+                    strokeWidth={1.5}
                     strokeDasharray="4 4"
-                    dot={false}
+                    connectNulls
+                    dot={{ r: 2 }}
                     isAnimationActive={false}
                   />
                 )}
@@ -320,7 +370,7 @@ export function MetricsDashboard({ activeRun, baselineRun }: MetricsDashboardPro
                   type="monotone"
                   dataKey="kl"
                   name="KL (k3)"
-                  stroke="#dc2626"
+                  stroke={primaryStroke}
                   strokeWidth={2}
                   dot={false}
                   isAnimationActive={false}
@@ -330,7 +380,7 @@ export function MetricsDashboard({ activeRun, baselineRun }: MetricsDashboardPro
                   type="monotone"
                   dataKey="clip"
                   name={`${pickText(UI_STRINGS.legendClip, lang)} (%)`}
-                  stroke="#7c3aed"
+                  stroke={secondaryStroke}
                   strokeWidth={1.5}
                   dot={false}
                   isAnimationActive={false}
@@ -338,7 +388,7 @@ export function MetricsDashboard({ activeRun, baselineRun }: MetricsDashboardPro
               </LineChart>
             </ResponsiveContainer>
           </Box>
-        </Paper>
+        </Box>
       </SimpleGrid>
     </Box>
   );

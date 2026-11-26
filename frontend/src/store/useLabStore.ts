@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import demoRunsRaw from '../data/demoRuns.json';
+import demoRunsRaw from '../data/demoRuns.json?raw';
 import { LESSONS } from '../i18n/lessons';
 import type {
   ConsoleEntry,
@@ -10,7 +10,7 @@ import type {
   StepLog,
 } from '../types/lab';
 
-const DEMO_RUNS = demoRunsRaw as unknown as Record<string, RunLog>;
+const DEMO_RUNS: Record<string, RunLog> = JSON.parse(demoRunsRaw);
 
 function detectInitialLang(): Lang {
   const saved = localStorage.getItem('llm-rl-lab-lang');
@@ -119,7 +119,7 @@ export const useLabStore = create<LabState>((set, get) => ({
       id: 'init-1',
       ts: nowTime(),
       level: 'info',
-      message: 'Loaded 10 pre-recorded Countdown RLVR runs (Qwen2.5-0.5B-Instruct · 8 GB VRAM schema v1.0).',
+      message: `Loaded ${Object.keys(DEMO_RUNS).length} bundled Countdown replays.`,
     },
   ],
 

@@ -1,39 +1,17 @@
 # 06 · UI Design System & Bilingual Architecture
 
-## Aesthetic Direction (Anti-AI-Slop Guidelines)
+## Aesthetic Direction (`DESIGN.md`)
 
-The UI is deliberately modeled after scientific/engineering workbenches (**Distill.pub, Stripe Docs, Observable, Weights & Biases**) rather than generic AI SaaS templates:
+All frontend components conform to the 5-module spec in [`DESIGN.md`](../DESIGN.md) (based on `https://zacharyzhang.com/blog/ai-frontend-design-rules`):
 
-- **No neon gradients, glassmorphism, or decorative glows**: Flat surfaces (`shadow: "none"`) with crisp 1px borders (`--lab-border`), subtle warm paper light canvas (`#FAF9F6`) and neutral GitHub-style charcoal dark mode (`#0D1117`).
-- **Typography**: `Inter` + native Chinese UI stack (`PingFang SC`, `Hiragino Sans GB`, `Microsoft YaHei`) for readable prose; `JetBrains Mono` with `font-variant-numeric: tabular-nums` on every metric, slider, reward, and VRAM counter to prevent horizontal jitter during timeline scrubbing.
-- **Semantic Color Restraint**:
-  - Primary Accent (Active Run / UI): Blueprint Cobalt (`#1D4ED8`)
-  - Positive Advantage / Valid / Pass: Forest Emerald (`#059669`)
-  - Negative Advantage / Fail / Reward Hack: Crimson (`#DC2626`)
-  - Entropy / Warning: Warm Amber (`#D97706`)
-  - Reference / Baseline Overlay: Muted Slate (`#94A3B8`, dashed line)
-- **Editorial Copy**: Direct, technical, concise phrasing in both Chinese and English; zero hype buzzwords or emojis in controls.
-
-## Reused UI & Visualization Frameworks
-
-| Concern | Package | Usage |
-| --- | --- | --- |
-| Core Components & Theme | `@mantine/core`, `@mantine/hooks`, `@mantine/notifications` | Layout, Tabs, SegmentedControl, Slider, HoverCard, Modal, Alert, Badges, Light/Dark scheme |
-| Resizable Split Workspace | `react-resizable-panels` | Draggable Left Textbook / Right Workbench split persisted in `localStorage` |
-| Telemetry Charts | `recharts` | 2×2 synchronized line charts with Baseline dashed overlay & clickable step cursor |
-| Code Editor & Diff | `@monaco-editor/react` | Python surgical editor + side-by-side `DiffEditor` |
-| Math Rendering | `katex` | Display equations inside `MathBlock.tsx` |
-| Icons | `lucide-react` | Minimal 13–17px stroke icons |
-| Client State | `zustand` | Single store (`useLabStore.ts`) managing lessons, runs, replay timer, WS state, and i18n |
-
-## Bilingual (`zh` / `en`) Structure
-
-- All UI labels live in `frontend/src/i18n/index.ts` as `{ zh: string; en: string }` objects (`BiText`), selected via `pickText(entry, lang)`.
-- All 6 lessons (headings, prose, math captions, callouts, predict-before-run prompts, options, explanations) live in `frontend/src/i18n/lessons.ts` in the same bilingual `BiText` structure.
-- Language preference toggles instantaneously via the header `中文 | EN` control and persists in `localStorage` (`llm-rl-lab-lang`).
-
-## Adding a New Lesson or Experiment Preset
-
-1. Add a new `ExperimentPreset` entry in `backend/llm_rl_lab/config.py` and trajectory rules in `backend/llm_rl_lab/demo_data.py`.
-2. Regenerate the static bundle: `uv run llm-rl-lab generate-demo --out frontend/src/data/demoRuns.json`.
-3. Add the bilingual preset label to `PRESET_LABELS` in `frontend/src/i18n/index.ts` and the lesson entry to `LESSONS` in `frontend/src/i18n/lessons.ts`.
+1. **Layout & Information Hierarchy**: Flat single-level surfaces only—zero nested bordered cards, zero decorative `<Divider />` lines, zero taglines, subtitles, or interface-explaining copy. Hierarchy comes from alignment, whitespace, and font weight contrast.
+2. **Visuals, Color & Whitespace**: Apple-minimal neutral canvas (`#FFFFFF` / `#F5F5F7` light; `#0F0F10` / `#18181B` dark) following a strict **90% neutral / 10% single accent (`#0071E3`)** ratio. Component padding and spacing are set at ~1.5× standard density (`24px`–`40px`).
+3. **Typography, 4px Grid & Reicon**:
+   - **Geist** (`@fontsource/geist-sans` + `@fontsource/geist-mono`) everywhere, with `tabular-nums` on every live number.
+   - Headings `18px` bold (`600`–`700`, `#181818`); body `16px` / `14px` regular–medium (`400`–`500`, `#181818` / `#6A6A6A`).
+   - Strict **4px spacing grid** across all margins, paddings, and gaps; corner radii scale from `8px` (buttons/inputs) to `16px` (panels) and `24px` (modals).
+   - **Reicon (`reicon-react`)** wrapped by `LabIcon.tsx`: `18px` glyph, `1.5px` stroke inside a fixed transparent `24px × 24px` frame.
+4. **Interaction & Desktop Menus**:
+   - Secondary actions (`Diff`, `Load Ablation`, `Reset`, `Import/Export JSON`, `Try again`) are hidden by default via `.intent-zone .intent-controls` and appear on hover/focus.
+   - Desktop Lesson Menu in `HeaderBar.tsx` implements open delay (`120ms`), close delay (`220ms`), and a geometric **safe triangle** (`hooks/useSafeTriangle.ts`) toward the preset submenu.
+5. **Render Acceptance**: Verified visually via headless Chrome screenshots across Light/Dark, ZH/EN, Dashboard, Microscope, and Code Lab views.

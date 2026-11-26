@@ -1,8 +1,9 @@
-import { Alert, Badge, Box, Button, Group, Paper, Radio, Stack, Text } from '@mantine/core';
-import { CheckCircle2, FlaskConical, RotateCcw, XCircle } from 'lucide-react';
+import { Box, Button, Group, Radio, Stack, Text } from '@mantine/core';
+import { CheckCircle, CloseCircle, Flask, Refresh } from 'reicon-react';
 import { pickText, UI_STRINGS } from '../i18n';
 import { useLabStore } from '../store/useLabStore';
 import type { PredictChallenge } from '../types/lab';
+import { LabIcon } from './LabIcon';
 
 interface PredictCardProps {
   lessonId: string;
@@ -15,28 +16,29 @@ export function PredictCard({ lessonId, predict }: PredictCardProps) {
   const isCorrect = state.locked && state.selectedId === predict.correctOptionId;
 
   return (
-    <Paper
-      p="md"
-      mt="lg"
+    <Box
+      className="intent-zone"
+      p={24}
+      mt={40}
       style={{
         backgroundColor: 'var(--lab-surface)',
-        borderColor: 'var(--lab-border)',
-        borderLeft: '3px solid #1d4ed8',
+        borderRadius: 16,
       }}
     >
-      <Group justify="space-between" mb="xs" wrap="nowrap">
-        <Group gap={6}>
-          <FlaskConical size={15} style={{ color: '#1d4ed8' }} />
-          <Text size="xs" fw={600} tt="uppercase" c="cobalt" style={{ letterSpacing: '0.04em' }}>
-            {pickText(UI_STRINGS.predictBadge, lang)}
+      <Group justify="space-between" mb={16} wrap="nowrap">
+        <Group gap={8}>
+          <LabIcon icon={Flask} color="var(--lab-accent)" />
+          <Text fw={600} fz={18} style={{ color: 'var(--lab-text)' }}>
+            {pickText(predict.title, lang)}
           </Text>
         </Group>
         {state.locked && (
           <Button
-            size="compact-xs"
+            className="intent-controls"
+            size="xs"
             variant="subtle"
             color="gray"
-            leftSection={<RotateCcw size={12} />}
+            leftSection={<LabIcon icon={Refresh} color="var(--lab-muted)" />}
             onClick={() => resetPrediction(lessonId)}
           >
             {pickText(UI_STRINGS.predictReset, lang)}
@@ -44,24 +46,12 @@ export function PredictCard({ lessonId, predict }: PredictCardProps) {
         )}
       </Group>
 
-      <Text fw={600} size="sm" mb={6}>
-        {pickText(predict.title, lang)}
-      </Text>
-      <Text size="sm" c="dimmed" lh={1.6} mb="sm">
+      <Text fz={14} lh={1.7} mb={16} style={{ color: 'var(--lab-muted)' }}>
         {pickText(predict.prompt, lang)}
       </Text>
 
-      {/* Code Diff Block */}
-      <Box
-        mb="sm"
-        py={6}
-        style={{
-          border: '1px solid var(--lab-border)',
-          borderRadius: 4,
-          backgroundColor: 'var(--lab-formula-bg)',
-          overflowX: 'auto',
-        }}
-      >
+      {/* Borderless inline diff lines (no nested boxes) */}
+      <Stack gap={4} mb={20}>
         {predict.diffLines.map((line, i) => (
           <div
             key={i}
@@ -76,48 +66,53 @@ export function PredictCard({ lessonId, predict }: PredictCardProps) {
             {line.text}
           </div>
         ))}
-      </Box>
+      </Stack>
 
-      {/* Options */}
+      {/* Borderless clickable option rows */}
       <Radio.Group
         value={state.selectedId ?? ''}
         onChange={(val) => {
           if (!state.locked) selectPrediction(lessonId, val);
         }}
       >
-        <Stack gap={6}>
+        <Stack gap={8}>
           {predict.options.map((opt) => {
             const isSelected = state.selectedId === opt.id;
             const isAnswer = opt.id === predict.correctOptionId;
-            let borderColor = 'var(--lab-border)';
-            if (state.locked && isAnswer) borderColor = '#059669';
-            else if (state.locked && isSelected && !isAnswer) borderColor = '#dc2626';
-            else if (isSelected) borderColor = '#1d4ed8';
+
+            let bg = 'transparent';
+            if (state.locked && isAnswer) bg = 'var(--lab-accent-soft)';
+            else if (isSelected) bg = 'var(--lab-surface-hover)';
 
             return (
               <Box
                 key={opt.id}
-                px="sm"
-                py={8}
+                px={12}
+                py={12}
                 onClick={() => {
                   if (!state.locked) selectPrediction(lessonId, opt.id);
                 }}
                 style={{
-                  border: `1px solid ${borderColor}`,
-                  borderRadius: 4,
+                  borderRadius: 12,
                   cursor: state.locked ? 'default' : 'pointer',
-                  backgroundColor:
-                    state.locked && isAnswer
-                      ? 'var(--lab-diff-add-bg)'
-                      : 'transparent',
+                  backgroundColor: bg,
+                  transition: 'background-color 120ms ease',
                 }}
               >
                 <Radio
                   value={opt.id}
                   disabled={state.locked}
-                  size="xs"
+                  size="sm"
                   label={
-                    <Text size="xs" lh={1.55}>
+                    <Text
+                      fz={14}
+                      fw={state.locked && isAnswer ? 600 : 400}
+                      lh={1.6}
+                      style={{
+                        color:
+                          state.locked && isAnswer ? 'var(--lab-accent)' : 'var(--lab-text)',
+                      }}
+                    >
                       {pickText(opt.label, lang)}
                     </Text>
                   }
@@ -129,41 +124,41 @@ export function PredictCard({ lessonId, predict }: PredictCardProps) {
       </Radio.Group>
 
       {!state.locked ? (
-        <Group justify="flex-end" mt="sm">
+        <Group justify="flex-end" mt={20}>
           <Button
-            size="xs"
+            size="sm"
             disabled={!state.selectedId}
             onClick={() =>
               lockPrediction(lessonId, predict.experimentPresetId, predict.baselinePresetId)
             }
+            px={20}
+            styles={{ root: { height: 40, fontWeight: 500 } }}
           >
             {pickText(UI_STRINGS.predictLockBtn, lang)}
           </Button>
         </Group>
       ) : (
-        <Alert
-          mt="sm"
-          variant="light"
-          color={isCorrect ? 'teal' : 'orange'}
-          icon={isCorrect ? <CheckCircle2 size={16} /> : <XCircle size={16} />}
-          title={
-            <Group gap={8}>
-              <Text size="xs" fw={600}>
-                {isCorrect
-                  ? pickText(UI_STRINGS.predictCorrect, lang)
-                  : pickText(UI_STRINGS.predictWrong, lang)}
-              </Text>
-              <Badge size="xs" color="cobalt" variant="outline">
-                {pickText(UI_STRINGS.predictOverlaid, lang)}
-              </Badge>
-            </Group>
-          }
-        >
-          <Text size="xs" lh={1.6}>
+        <Box mt={20} pt={16}>
+          <Group gap={8} mb={8}>
+            <LabIcon
+              icon={isCorrect ? CheckCircle : CloseCircle}
+              color={isCorrect ? 'var(--lab-accent)' : 'var(--lab-text)'}
+            />
+            <Text
+              fz={14}
+              fw={600}
+              style={{ color: isCorrect ? 'var(--lab-accent)' : 'var(--lab-text)' }}
+            >
+              {isCorrect
+                ? pickText(UI_STRINGS.predictCorrect, lang)
+                : pickText(UI_STRINGS.predictWrong, lang)}
+            </Text>
+          </Group>
+          <Text fz={14} lh={1.7} style={{ color: 'var(--lab-muted)' }}>
             {pickText(predict.explanation, lang)}
           </Text>
-        </Alert>
+        </Box>
       )}
-    </Paper>
+    </Box>
   );
 }

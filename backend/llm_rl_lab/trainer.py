@@ -23,7 +23,7 @@ from .config import PRESETS, detect_device_telemetry
 from .countdown import (
     ANSWER_RE,
     THINK_RE,
-    build_countdown_prompt,
+    render_countdown_prompt,
     generate_countdown_dataset,
     verify_countdown,
 )
@@ -35,6 +35,8 @@ from .schema import (
     StartTrainRequest,
     StepLog,
     StepMetrics,
+    TokenCandidate,
+    TokenProbInfo,
 )
 
 EventCallback = Callable[[dict[str, Any]], Awaitable[None]]
@@ -51,10 +53,11 @@ def _make_answer_stopping_criteria(tokenizer: Any) -> Any:
     stop_str = "</answer>"
 
     class AnswerTagStopper(StoppingCriteria):
-        def __call__(self, input_ids: Any, scores: Any, **kwargs: Any) -> bool:
+        def __call__(self, input_ids: Any, scores: Any, **kwargs: Any) -> Any:
             tail = input_ids[:, -10:]
             texts = tokenizer.batch_decode(tail, skip_special_tokens=False)
-            return all(stop_str in t for t in texts)
+            import torch
+            return torch.tensor([stop_str in t for t in texts], device=input_ids.device)
 
     return AnswerTagStopper()
 
@@ -107,8 +110,9 @@ class MockTrainer:
 class RealGPUTrainer:
     """Real 8GB-VRAM PyTorch trainer using Qwen2.5-0.5B-Instruct + LoRA + disable_adapter() KL."""
 
-    def __init__(self, model_name: str = "Qwen/Qwen2.5-0.5B-Instruct") -> None:
+    def __init__(self, model_name: str = "Qwen/Qwen2.5-0.5B-Instruct", *, model_path: str | None = None) -> None:
         self.model_name = model_name
+        self.model_path = model_path or model_name
         self._model: Any = None
         self._tokenizer: Any = None
 
@@ -127,14 +131,14 @@ class RealGPUTrainer:
         torch_dtype = dtype_map[telemetry.recommended_dtype]
 
         if self._tokenizer is None:
-            self._tokenizer = AutoTokenizer.from_pretrained(self.model_name)
+            self._tokenizer = AutoTokenizer.from_pretrained(self.model_path)
             self._tokenizer.padding_side = "left"
             if self._tokenizer.pad_token is None:
                 self._tokenizer.pad_token = self._tokenizer.eos_token
 
         if self._model is None:
             base = AutoModelForCausalLM.from_pretrained(
-                self.model_name,
+                self.model_path,
                 torch_dtype=torch_dtype,
             ).to(device)
             base.gradient_checkpointing_enable()
@@ -158,6 +162,10 @@ class RealGPUTrainer:
         emit: EventCallback,
         cancel_event: asyncio.Event,
         runs_dir: Path,
+        *,
+        data_seed: int = 42,
+        record_tokens: bool = False,
+        offline_probe: RunLog | None = None,
     ) -> RunLog:
         import torch
         from transformers import StoppingCriteriaList
@@ -186,7 +194,13 @@ class RealGPUTrainer:
             [p for p in model.parameters() if p.requires_grad],
             lr=preset.learning_rate,
         )
-        dataset = generate_countdown_dataset(size=total_steps + 16, seed=42)
+        offline_update = None
+        if preset.algorithm == "dpo":
+            if offline_probe is None:
+                raise ValueError("Offline DPO requires a frozen preference dataset. Use the recording script.")
+            from .offline_record import make_dpo_update
+            offline_update = make_dpo_update(offline_probe, model, tokenizer, device, kl_beta)
+        dataset = generate_countdown_dataset(size=total_steps + 16, seed=data_seed)
         stopper = StoppingCriteriaList([_make_answer_stopping_criteria(tokenizer)])
 
         run_id = f"gpu-{uuid.uuid4().hex[:8]}"
@@ -222,7 +236,7 @@ class RealGPUTrainer:
 
             t_start = time.perf_counter()
             problem = dataset[step_idx]
-            prompt_text = build_countdown_prompt(problem.numbers, problem.target, include_one_shot=True)
+            prompt_text = render_countdown_prompt(tokenizer, problem.numbers, problem.target)
             prompt_inputs = tokenizer([prompt_text] * group_size, return_tensors="pt", padding=True).to(device)
             prompt_len = prompt_inputs["input_ids"].shape[1]
 
@@ -261,7 +275,10 @@ class RealGPUTrainer:
             mean_r = float(rewards_t.mean().item())
             std_r = float(rewards_t.std(unbiased=False).item())
 
-            if preset.use_baseline:
+            if preset.algorithm in ("dpo", "sft_probe"):
+                # These rollouts are observations, not policy-gradient training examples.
+                adv_t, zero_grad_group = torch.zeros_like(rewards_t), False
+            elif preset.use_baseline:
                 adv_t, zero_grad_group = compute_grpo_advantages(rewards_t)
             else:
                 adv_t, zero_grad_group = rewards_t.clone(), False
@@ -270,6 +287,7 @@ class RealGPUTrainer:
             attn_mask = (full_ids != tokenizer.pad_token_id).long()
             target_ids = full_ids[:, 1:]
 
+            trace_candidates = None
             with torch.no_grad():
                 old_logp_list, ent_list, ref_logp_list = [], [], []
                 for start in range(0, group_size, micro_batch_size):
@@ -282,6 +300,12 @@ class RealGPUTrainer:
                     lp_old, ent_mb = compute_per_token_logprobs_and_entropy(out_old.logits[:, :-1, :], mb_tgt)
                     old_logp_list.append(lp_old[:, prompt_len - 1 :])
                     ent_list.append(ent_mb[:, prompt_len - 1 :])
+                    if record_tokens and start == 0:
+                        logits = out_old.logits[0, prompt_len - 1 : -1].float()
+                        values, ids = logits.topk(5, dim=-1)
+                        probs = (values - logits.logsumexp(-1, keepdim=True)).exp()
+                        trace_candidates = (ids.tolist(), probs.tolist())
+                        del logits, values, ids, probs
                     del out_old
 
                     with model.disable_adapter():
@@ -296,11 +320,15 @@ class RealGPUTrainer:
 
             # 4. Micro-batched policy update (stays under ~5.5 GB peak VRAM)
             total_loss_val = 0.0
-            kl_val = 0.0
+            obs_kl = compute_kl_k3(old_logp_all, ref_logp_all)
+            kl_val = float((obs_kl * resp_mask).sum().item() / max(1, resp_mask.sum().item()))
             clip_frac_val = 0.0
             grad_norm_val = 0.0
 
-            if not zero_grad_group and preset.algorithm != "sft_probe":
+            if offline_update is not None:
+                model.train()
+                total_loss_val, grad_norm_val = offline_update(step_idx, optimizer)
+            elif not zero_grad_group and preset.algorithm != "sft_probe":
                 model.train()
                 for _epoch in range(update_epochs):
                     optimizer.zero_grad(set_to_none=True)
@@ -325,7 +353,8 @@ class RealGPUTrainer:
                         log_ratio = (mb_logp - mb_old).clamp(-20.0, 20.0)
                         ratio = torch.exp(log_ratio)
                         clipped = torch.clamp(ratio, 1.0 - preset.clip_eps, 1.0 + preset.clip_eps)
-                        pg_tok = -torch.minimum(ratio * mb_adv, clipped * mb_adv)
+                        pg_tok = (-mb_logp * mb_adv if preset.algorithm == "reinforce" else
+                                  -torch.minimum(ratio * mb_adv, clipped * mb_adv))
                         kl_tok = compute_kl_k3(mb_logp, mb_ref)
 
                         seq_lens = mb_mask.sum(dim=-1).clamp(min=1.0)
@@ -358,8 +387,22 @@ class RealGPUTrainer:
                 a_m = ANSWER_RE.search(comp)
                 n_tok = int(mask_f[idx].sum().item())
                 mean_lp = float(((old_logp_all[idx] * mask_f[idx]).sum() / max(1, n_tok)).item())
+                tokens = []
+                if idx == 0 and trace_candidates is not None:
+                    ids, probs = trace_candidates
+                    for pos in resp_mask[idx].nonzero(as_tuple=True)[0].tolist():
+                        log_p = old_logp_all[idx, pos].item()
+                        tokens.append(TokenProbInfo(
+                            token=tokenizer.decode([resp_ids[idx, pos].item()]),
+                            prob=round(math.exp(log_p), 7), log_prob=round(log_p, 6),
+                            entropy=round(ent_all[idx, pos].item(), 6), kl=round(obs_kl[idx, pos].item(), 6),
+                            advantage=round(adv_t[idx].item(), 4),
+                            top_candidates=[TokenCandidate(token=tokenizer.decode([tok]), prob=round(p, 7))
+                                            for tok, p in zip(ids[pos], probs[pos])],
+                        ))
                 samples.append(
                     SampleRollout(
+                        token_probs=tokens,
                         index=idx,
                         raw_text=comp,
                         think_text=t_m.group(1).strip() if t_m else "",

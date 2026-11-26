@@ -1,0 +1,52 @@
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  color: #181818;
+  background: #ffffff;
+  font: 16px/1.7 "Geist Sans", -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+main { max-width: 896px; margin: auto; padding: 48px 24px 80px; }
+nav, small, dt { color: #6a6a6a; font-size: 14px; }
+a, b { color: #0071e3; text-decoration: none; }
+a:hover { text-decoration: underline; }
+h1 { margin: 24px 0 12px; font-size: 32px; font-weight: 700; line-height: 1.25; letter-spacing: -0.025em; }
+h2 { font-size: 18px; font-weight: 600; margin: 0; color: #181818; }
+p { margin: 12px 0; color: #6a6a6a; }
+section, #status {
+  margin-top: 32px;
+  padding: 24px;
+  background: #f5f5f7;
+  border: none;
+  border-radius: 16px;
+}
+.task, .section-head { display: flex; align-items: center; justify-content: space-between; gap: 24px; }
+.formula { flex: none; padding: 0; background: transparent; }
+.formula code, dd { font-size: 24px; font-family: "Geist Mono", ui-monospace, monospace; color: #181818; }
+#delta { color: #0071e3; }
+.note { margin: 24px 0; padding: 0; color: #6a6a6a; font-size: 14px; }
+select {
+  font: inherit;
+  font-size: 14px;
+  background: #ffffff;
+  color: #181818;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 12px;
+}
+dl { margin: 20px 0; }
+.scores { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.scores > div { padding: 16px 0; }
+.example { padding: 16px 0; margin-top: 12px; }
+dd { margin: 4px 0; font-weight: 600; font-variant-numeric: tabular-nums; }
+.chart { display: block; width: 100%; max-width: 672px; margin: 20px auto; }
+summary { color: #0071e3; cursor: pointer; font-size: 14px; font-weight: 500; }
+table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; margin-top: 12px; }
+th, td { text-align: left; padding: 12px 8px; font-size: 14px; }
+th { color: #6a6a6a; font-weight: 500; }
+.example h3 { margin: 0 0 8px; font-size: 16px; font-weight: 600; color: #181818; }
+@media (max-width: 640px) {
+  .task, .section-head { align-items: start; flex-direction: column; }
+  .scores { grid-template-columns: 1fr; }
+  .scores > div { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px; }
+}

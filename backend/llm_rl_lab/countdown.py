@@ -177,6 +177,21 @@ def build_countdown_prompt(
     return header + example + query
 
 
+def render_countdown_prompt(tokenizer, numbers: list[int], target: int) -> str:
+    """Use the instruction model's assistant turn for both rollout and preference scoring."""
+    def question(nums, goal):
+        return f"Numbers: {nums}. Target: {goal}."
+
+    return tokenizer.apply_chat_template([
+        {"role": "system", "content": "Use all three numbers exactly once with +, -, *, and parentheses to make the target. Reply in exactly two short tags like the examples, without an equals sign in the answer."},
+        {"role": "user", "content": question([2, 5, 9], 19)},
+        {"role": "assistant", "content": "<think>2 times 5 gives 10; add 9.</think>\n<answer>2 * 5 + 9</answer>"},
+        {"role": "user", "content": question([3, 4, 7], 9)},
+        {"role": "assistant", "content": "<think>7 minus 4 gives 3; multiply by 3.</think>\n<answer>(7 - 4) * 3</answer>"},
+        {"role": "user", "content": question(numbers, target)},
+    ], tokenize=False, add_generation_prompt=True)
+
+
 def verify_countdown(
     completion: str,
     numbers: list[int],

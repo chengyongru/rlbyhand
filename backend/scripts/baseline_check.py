@@ -6,7 +6,7 @@ Run this first when testing on a real GPU at home:
 
 Checks:
 1. GPU device, recommended dtype (bf16 vs fp16), and initial VRAM headroom.
-2. Zero-shot / 1-shot Pass@1 and Pass@6 on 3-number Countdown (verifies 10%-30% RL sweet spot).
+2. Few-shot Pass@1 and Pass@6 on 3-number Countdown (verifies 10%-30% RL sweet spot).
 3. Batched rollout latency with `</answer>` early stopping.
 4. 5-step micro-batched GRPO sanity run with `disable_adapter()` KL and peak VRAM report.
 """
@@ -18,7 +18,7 @@ import time
 from pathlib import Path
 
 from llm_rl_lab.config import detect_device_telemetry
-from llm_rl_lab.countdown import build_countdown_prompt, generate_countdown_dataset, verify_countdown
+from llm_rl_lab.countdown import render_countdown_prompt, generate_countdown_dataset, verify_countdown
 from llm_rl_lab.schema import StartTrainRequest
 from llm_rl_lab.trainer import RealGPUTrainer
 
@@ -48,7 +48,7 @@ def evaluate_baseline(num_problems: int = 16, group_size: int = 6) -> None:
     model.eval()
     model.config.use_cache = True
     for idx, prob in enumerate(problems):
-        prompt = build_countdown_prompt(prob.numbers, prob.target, include_one_shot=True)
+        prompt = render_countdown_prompt(tokenizer, prob.numbers, prob.target)
         inputs = tokenizer([prompt] * group_size, return_tensors="pt", padding=True).to(device)
         prompt_len = inputs["input_ids"].shape[1]
         with torch.no_grad():

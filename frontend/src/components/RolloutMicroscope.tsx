@@ -1,37 +1,34 @@
 import { useState } from 'react';
 import {
-  Alert,
-  Badge,
   Box,
   Group,
   HoverCard,
-  Paper,
   Progress,
   SegmentedControl,
   Stack,
   Text,
 } from '@mantine/core';
-import { AlertTriangle, Check, Info, X } from 'lucide-react';
+import { AlertTriangle, CheckCircle, CloseCircle, InfoCircle } from 'reicon-react';
 import { pickText, UI_STRINGS } from '../i18n';
 import { useLabStore } from '../store/useLabStore';
 import type { StepLog, TokenProbInfo } from '../types/lab';
+import { LabIcon } from './LabIcon';
 
 type HeatmapMode = 'off' | 'prob' | 'entropy' | 'kl';
 
 function tokenBgColor(tok: TokenProbInfo, mode: HeatmapMode): string {
+  // Single-accent intensity scale (90% neutral / 10% accent)
   if (mode === 'prob') {
-    const alpha = Math.max(0.08, Math.min(0.42, (1 - tok.prob) * 0.55));
-    return tok.prob > 0.75
-      ? `rgba(5, 150, 105, ${Math.min(0.28, tok.prob * 0.25)})`
-      : `rgba(217, 119, 6, ${alpha})`;
+    const alpha = Math.max(0.06, Math.min(0.28, tok.prob * 0.28));
+    return `rgba(0, 113, 227, ${alpha})`;
   }
   if (mode === 'entropy') {
-    const alpha = Math.max(0.06, Math.min(0.5, tok.entropy * 0.35));
-    return `rgba(217, 119, 6, ${alpha})`;
+    const alpha = Math.max(0.05, Math.min(0.32, tok.entropy * 0.26));
+    return `rgba(0, 113, 227, ${alpha})`;
   }
   if (mode === 'kl') {
-    const alpha = Math.max(0.06, Math.min(0.55, tok.kl * 2.2));
-    return `rgba(220, 38, 38, ${alpha})`;
+    const alpha = Math.max(0.05, Math.min(0.38, tok.kl * 1.8));
+    return `rgba(0, 113, 227, ${alpha})`;
   }
   return 'transparent';
 }
@@ -46,212 +43,177 @@ export function RolloutMicroscope({ stepLog }: RolloutMicroscopeProps) {
 
   if (!stepLog) {
     return (
-      <Paper p="lg" style={{ backgroundColor: 'var(--lab-surface)' }}>
-        <Text size="sm" c="dimmed">
-          {lang === 'zh' ? '暂无当前步的采样数据。' : 'No rollout samples for this step yet.'}
-        </Text>
-      </Paper>
+      <Text fz={14} style={{ color: 'var(--lab-muted)' }}>
+        {lang === 'zh' ? '暂无当前步的采样数据。' : 'No rollout samples for this step yet.'}
+      </Text>
     );
   }
 
+  const hasTokenData = stepLog.samples.some((s) => s.token_probs?.length);
   const maxAbsAdv = Math.max(1.5, ...stepLog.samples.map((s) => Math.abs(s.advantage)));
 
   return (
-    <Stack gap="sm">
-      {/* Prompt & Group Summary Header */}
-      <Paper p="sm" style={{ backgroundColor: 'var(--lab-surface)' }}>
-        <Group justify="space-between" wrap="wrap" gap="sm">
-          <Group gap="md" wrap="wrap">
-            <Box>
-              <Text size="11px" c="dimmed">
-                {pickText(UI_STRINGS.promptNumbers, lang)}
-              </Text>
-              <Text size="sm" fw={700} ff="monospace">
-                [{stepLog.prompt_numbers.join(', ')}]
-              </Text>
-            </Box>
-            <Box>
-              <Text size="11px" c="dimmed">
-                {pickText(UI_STRINGS.promptTarget, lang)}
-              </Text>
-              <Text size="sm" fw={700} ff="monospace" c="cobalt">
-                {stepLog.prompt_target}
-              </Text>
-            </Box>
-            <Box>
-              <Text size="11px" c="dimmed">
-                {pickText(UI_STRINGS.promptRef, lang)}
-              </Text>
-              <Text size="sm" ff="monospace">
-                {stepLog.prompt_solution}
-              </Text>
-            </Box>
-            <Box>
-              <Text size="11px" c="dimmed">
-                {pickText(UI_STRINGS.groupStats, lang)}
-              </Text>
-              <Text size="xs" ff="monospace" className="tabular-nums">
-                μ={stepLog.group_mean_reward.toFixed(2)} · σ={stepLog.group_std_reward.toFixed(2)}
-              </Text>
-            </Box>
-          </Group>
-
-          <Group gap={6}>
-            <Text size="11px" c="dimmed">
-              {pickText(UI_STRINGS.heatmapMode, lang)}
+    <Stack gap={24}>
+      {/* Borderless Prompt & Group Summary Header */}
+      <Group justify="space-between" align="flex-end" wrap="wrap" gap={24} className="intent-zone">
+        <Group gap={32} wrap="wrap">
+          <Box>
+            <Text fz={14} mb={4} style={{ color: 'var(--lab-muted)' }}>
+              {pickText(UI_STRINGS.promptNumbers, lang)}
             </Text>
-            <SegmentedControl
-              size="xs"
-              value={heatmap}
-              onChange={(v) => setHeatmap(v as HeatmapMode)}
-              data={[
-                { label: pickText(UI_STRINGS.heatmapOff, lang), value: 'off' },
-                { label: pickText(UI_STRINGS.heatmapProb, lang), value: 'prob' },
-                { label: pickText(UI_STRINGS.heatmapEntropy, lang), value: 'entropy' },
-                { label: pickText(UI_STRINGS.heatmapKl, lang), value: 'kl' },
-              ]}
-            />
-          </Group>
+            <Text fz={18} fw={600} ff="monospace" style={{ color: 'var(--lab-text)' }}>
+              [{stepLog.prompt_numbers.join(', ')}]
+            </Text>
+          </Box>
+          <Box>
+            <Text fz={14} mb={4} style={{ color: 'var(--lab-muted)' }}>
+              {pickText(UI_STRINGS.promptTarget, lang)}
+            </Text>
+            <Text fz={18} fw={700} ff="monospace" style={{ color: 'var(--lab-accent)' }}>
+              {stepLog.prompt_target}
+            </Text>
+          </Box>
+          <Box>
+            <Text fz={14} mb={4} style={{ color: 'var(--lab-muted)' }}>
+              {pickText(UI_STRINGS.promptRef, lang)}
+            </Text>
+            <Text fz={16} fw={500} ff="monospace" style={{ color: 'var(--lab-text)' }}>
+              {stepLog.prompt_solution}
+            </Text>
+          </Box>
+          <Box>
+            <Text fz={14} mb={4} style={{ color: 'var(--lab-muted)' }}>
+              {pickText(UI_STRINGS.groupStats, lang)}
+            </Text>
+            <Text fz={14} fw={500} ff="monospace" className="tabular-nums" style={{ color: 'var(--lab-text)' }}>
+              μ {stepLog.group_mean_reward.toFixed(2)} · σ {stepLog.group_std_reward.toFixed(2)}
+            </Text>
+          </Box>
         </Group>
-      </Paper>
+
+        {hasTokenData && (
+          <SegmentedControl
+            size="xs"
+            value={heatmap}
+            onChange={(v) => setHeatmap(v as HeatmapMode)}
+            data={[
+              { label: pickText(UI_STRINGS.heatmapOff, lang), value: 'off' },
+              { label: pickText(UI_STRINGS.heatmapProb, lang), value: 'prob' },
+              { label: pickText(UI_STRINGS.heatmapEntropy, lang), value: 'entropy' },
+              { label: pickText(UI_STRINGS.heatmapKl, lang), value: 'kl' },
+            ]}
+          />
+        )}
+      </Group>
 
       {stepLog.zero_grad_group && (
-        <Alert color="gray" variant="light" icon={<Info size={15} />}>
-          <Text size="xs">{pickText(UI_STRINGS.zeroGradBanner, lang)}</Text>
-        </Alert>
+        <Group
+          gap={12}
+          p={16}
+          wrap="nowrap"
+          style={{ backgroundColor: 'var(--lab-surface)', borderRadius: 12 }}
+        >
+          <LabIcon icon={InfoCircle} color="var(--lab-muted)" />
+          <Text fz={14} style={{ color: 'var(--lab-muted)' }}>
+            {pickText(UI_STRINGS.zeroGradBanner, lang)}
+          </Text>
+        </Group>
       )}
 
-      {/* Group Rollout Cards */}
-      <Stack gap={8}>
+      {/* Single-level Flat Rollout Surfaces (no nested boxes, no badge clutter) */}
+      <Stack gap={16}>
         {stepLog.samples.map((sample) => {
           const adv = sample.advantage;
           const isHack = sample.breakdown.hack_detected;
           const isExact = sample.breakdown.numbers_valid && sample.breakdown.target_matched;
-          const borderAccent = isHack
-            ? '#dc2626'
-            : adv > 0.05
-              ? '#059669'
-              : adv < -0.05
-                ? '#dc2626'
-                : '#94a3b8';
-
           const barPct = Math.min(100, (Math.abs(adv) / maxAbsAdv) * 100);
 
           return (
-            <Paper
+            <Box
               key={sample.index}
-              p="sm"
+              p={20}
               style={{
                 backgroundColor: 'var(--lab-surface)',
-                borderLeft: `3px solid ${borderAccent}`,
+                borderRadius: 16,
               }}
             >
-              {/* Top Row: Sample ID + Advantage Direction + Reward Badges */}
-              <Group justify="space-between" mb={6} wrap="wrap" gap={8}>
-                <Group gap={8} wrap="wrap">
-                  <Text size="xs" fw={700} ff="monospace" c="dimmed">
+              {/* Single compact metadata line */}
+              <Group justify="space-between" mb={12} wrap="wrap" gap={12}>
+                <Group gap={16} wrap="wrap">
+                  <Text fz={14} fw={600} ff="monospace" style={{ color: 'var(--lab-muted)' }}>
                     #{sample.index + 1}
                   </Text>
-                  <Badge
-                    size="xs"
-                    color={adv > 0.05 ? 'teal' : adv < -0.05 ? 'red' : 'gray'}
-                    variant="light"
-                    style={{ fontFamily: 'var(--mantine-font-family-monospace)' }}
+                  <Text
+                    fz={14}
+                    fw={600}
+                    ff="monospace"
+                    className="tabular-nums"
+                    style={{ color: adv > 0.05 ? 'var(--lab-accent)' : 'var(--lab-text)' }}
                   >
-                    A = {adv >= 0 ? `+${adv.toFixed(2)}` : adv.toFixed(2)} ·{' '}
-                    {adv > 0.05
-                      ? pickText(UI_STRINGS.advantagePush, lang)
-                      : adv < -0.05
-                        ? pickText(UI_STRINGS.advantagePull, lang)
-                        : pickText(UI_STRINGS.advantageNeutral, lang)}
-                  </Badge>
-                  <Badge
-                    size="xs"
-                    color="gray"
-                    variant="outline"
-                    style={{ fontFamily: 'var(--mantine-font-family-monospace)' }}
-                  >
-                    R = {sample.reward.toFixed(2)}
-                  </Badge>
-                  <Text size="11px" ff="monospace" c="dimmed">
-                    {sample.num_tokens} tok · logp {sample.mean_log_prob.toFixed(2)}
+                    A {adv >= 0 ? `+${adv.toFixed(2)}` : adv.toFixed(2)}
+                  </Text>
+                  <Text fz={14} ff="monospace" className="tabular-nums" style={{ color: 'var(--lab-text)' }}>
+                    R {sample.reward.toFixed(2)}
+                  </Text>
+                  <Text fz={14} ff="monospace" className="tabular-nums" style={{ color: 'var(--lab-muted)' }}>
+                    {sample.num_tokens} tok
                   </Text>
                 </Group>
 
-                <Group gap={5}>
-                  {isHack && (
-                    <Badge size="xs" color="red" variant="filled" leftSection={<AlertTriangle size={11} />}>
-                      {pickText(UI_STRINGS.hackBadge, lang)}
-                    </Badge>
-                  )}
-                  <Badge
-                    size="xs"
-                    color={sample.breakdown.format_reward > 0 ? 'teal' : 'gray'}
-                    variant="outline"
+                <Group gap={8}>
+                  <LabIcon
+                    icon={isHack ? AlertTriangle : isExact ? CheckCircle : CloseCircle}
+                    color={isExact && !isHack ? 'var(--lab-accent)' : 'var(--lab-muted)'}
+                  />
+                  <Text
+                    fz={14}
+                    fw={isHack || isExact ? 600 : 400}
+                    style={{
+                      color: isExact && !isHack ? 'var(--lab-accent)' : 'var(--lab-muted)',
+                    }}
                   >
-                    {sample.breakdown.format_reward > 0
-                      ? pickText(UI_STRINGS.formatOk, lang)
-                      : pickText(UI_STRINGS.formatFail, lang)}
-                  </Badge>
-                  {!isHack && (
-                    <Badge
-                      size="xs"
-                      color={isExact ? 'teal' : 'red'}
-                      variant="light"
-                      leftSection={isExact ? <Check size={11} /> : <X size={11} />}
-                    >
-                      {isExact
+                    {isHack
+                      ? pickText(UI_STRINGS.hackBadge, lang)
+                      : isExact
                         ? pickText(UI_STRINGS.exactMatch, lang)
                         : sample.breakdown.numbers_valid
                           ? `= ${sample.breakdown.evaluated_value ?? '?'}`
                           : pickText(UI_STRINGS.numMismatch, lang)}
-                    </Badge>
-                  )}
+                  </Text>
                 </Group>
               </Group>
 
-              {/* Diverging Advantage Visual Meter */}
-              <Box mb={8} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <Box style={{ flex: 1, height: 5, background: 'var(--lab-subtle)', borderRadius: 2, position: 'relative', overflow: 'hidden' }}>
+              {/* Subtle Diverging Advantage Track */}
+              <Box
+                mb={16}
+                style={{
+                  height: 4,
+                  backgroundColor: 'var(--lab-surface-hover)',
+                  borderRadius: 4,
+                  position: 'relative',
+                  overflow: 'hidden',
+                }}
+              >
+                {adv !== 0 && (
                   <Box
                     style={{
                       position: 'absolute',
                       top: 0,
                       bottom: 0,
-                      left: '50%',
-                      width: 1,
-                      background: 'var(--lab-border)',
+                      left: adv > 0 ? '50%' : `${50 - barPct / 2}%`,
+                      width: `${barPct / 2}%`,
+                      backgroundColor: adv > 0 ? 'var(--lab-accent)' : 'var(--lab-muted)',
+                      borderRadius: 4,
                     }}
                   />
-                  {adv !== 0 && (
-                    <Box
-                      style={{
-                        position: 'absolute',
-                        top: 0,
-                        bottom: 0,
-                        left: adv > 0 ? '50%' : `${50 - barPct / 2}%`,
-                        width: `${barPct / 2}%`,
-                        backgroundColor: adv > 0 ? '#059669' : '#dc2626',
-                        borderRadius: 2,
-                      }}
-                    />
-                  )}
-                </Box>
+                )}
               </Box>
 
-              {/* Completion Body: Token Heatmap (when available & enabled) OR Clean Think/Answer */}
-              {heatmap !== 'off' && sample.token_probs.length > 0 ? (
-                <Box
-                  p={8}
-                  style={{
-                    backgroundColor: 'var(--lab-formula-bg)',
-                    border: '1px solid var(--lab-border)',
-                    borderRadius: 4,
-                    lineHeight: 1.8,
-                  }}
-                >
+              {/* Body directly inside the surface (no nested inner boxes) */}
+              {heatmap !== 'off' && sample.token_probs?.length ? (
+                <Box style={{ lineHeight: 1.9 }}>
                   {sample.token_probs.map((tok, tIdx) => (
-                    <HoverCard key={tIdx} width={230} shadow="sm" openDelay={80} withArrow>
+                    <HoverCard key={tIdx} width={240} openDelay={80} radius="lg">
                       <HoverCard.Target>
                         <span
                           className="token-chip"
@@ -260,44 +222,30 @@ export function RolloutMicroscope({ stepLog }: RolloutMicroscopeProps) {
                           {tok.token}
                         </span>
                       </HoverCard.Target>
-                      <HoverCard.Dropdown p="xs">
-                        <Group justify="space-between" mb={4}>
-                          <Text size="xs" fw={700} ff="monospace">
+                      <HoverCard.Dropdown p={16}>
+                        <Group justify="space-between" mb={8}>
+                          <Text fz={14} fw={600} ff="monospace">
                             {JSON.stringify(tok.token)}
                           </Text>
-                          <Text size="11px" ff="monospace" c="dimmed">
-                            logp {tok.log_prob.toFixed(2)}
+                          <Text fz={12} ff="monospace" style={{ color: 'var(--lab-muted)' }}>
+                            {(tok.prob * 100).toFixed(1)}%
                           </Text>
                         </Group>
-                        <Group gap={10} mb={6}>
-                          <Text size="11px" ff="monospace">
-                            p={(tok.prob * 100).toFixed(1)}%
-                          </Text>
-                          <Text size="11px" ff="monospace" c="orange">
-                            H={tok.entropy.toFixed(2)}
-                          </Text>
-                          <Text size="11px" ff="monospace" c="red">
-                            KL={tok.kl.toFixed(3)}
-                          </Text>
-                        </Group>
-                        <Text size="10px" c="dimmed" fw={600} mb={4}>
-                          {pickText(UI_STRINGS.topCandidates, lang)}
-                        </Text>
-                        <Stack gap={4}>
+                        <Stack gap={8}>
                           {tok.top_candidates.map((cand, cIdx) => (
                             <Box key={cIdx}>
-                              <Group justify="space-between" mb={1}>
-                                <Text size="11px" ff="monospace">
+                              <Group justify="space-between" mb={4}>
+                                <Text fz={12} ff="monospace">
                                   {cand.token}
                                 </Text>
-                                <Text size="11px" ff="monospace" className="tabular-nums">
+                                <Text fz={12} ff="monospace" className="tabular-nums" style={{ color: 'var(--lab-muted)' }}>
                                   {(cand.prob * 100).toFixed(1)}%
                                 </Text>
                               </Group>
                               <Progress
                                 value={cand.prob * 100}
                                 size={4}
-                                color={cIdx === 0 ? 'cobalt' : 'gray'}
+                                color={cIdx === 0 ? 'accent' : 'gray'}
                               />
                             </Box>
                           ))}
@@ -307,33 +255,35 @@ export function RolloutMicroscope({ stepLog }: RolloutMicroscopeProps) {
                   ))}
                 </Box>
               ) : (
-                <Stack gap={4}>
-                  {sample.think_text && (
+                <Stack gap={8}>
+                  {!sample.token_probs?.length ? (
                     <Text
-                      size="xs"
-                      c="dimmed"
-                      lh={1.55}
+                      fz={14}
+                      ff="monospace"
+                      lh={1.65}
                       style={{
-                        backgroundColor: 'var(--lab-subtle)',
-                        padding: '6px 8px',
-                        borderRadius: 4,
-                        fontFamily: 'var(--mantine-font-family-monospace)',
+                        color: 'var(--lab-text)',
+                        whiteSpace: 'pre-wrap',
+                        overflowWrap: 'anywhere',
                       }}
                     >
-                      &lt;think&gt; {sample.think_text} &lt;/think&gt;
+                      {sample.raw_text || (lang === 'zh' ? '（空回复）' : '(empty response)')}
                     </Text>
+                  ) : (
+                    <>
+                      {sample.think_text && (
+                        <Text fz={14} lh={1.65} style={{ color: 'var(--lab-muted)' }}>
+                          {sample.think_text}
+                        </Text>
+                      )}
+                      <Text fz={14} ff="monospace" fw={600} style={{ color: 'var(--lab-text)' }}>
+                        {sample.answer_text || '(empty)'}
+                      </Text>
+                    </>
                   )}
-                  <Group gap={8} align="center">
-                    <Text size="xs" ff="monospace" fw={600}>
-                      &lt;answer&gt;{sample.answer_text || '(empty)'}&lt;/answer&gt;
-                    </Text>
-                    <Text size="11px" c="dimmed">
-                      — {sample.breakdown.reason}
-                    </Text>
-                  </Group>
                 </Stack>
               )}
-            </Paper>
+            </Box>
           );
         })}
       </Stack>
