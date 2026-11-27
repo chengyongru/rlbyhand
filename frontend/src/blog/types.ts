@@ -1,11 +1,11 @@
 import type { ComponentType } from 'react';
 
 export const CHALK_COLORS = {
-  white: '#ebe7dc',
-  yellow: '#e0c068',
-  blue: '#82adc2',
-  green: '#85b894',
-  coral: '#cf7278',
+  white: '#f3f0e6',
+  yellow: '#ead07c',
+  blue: '#95bfd4',
+  green: '#98c9a6',
+  coral: '#dc878d',
 } as const;
 
 export interface BlogChapter {

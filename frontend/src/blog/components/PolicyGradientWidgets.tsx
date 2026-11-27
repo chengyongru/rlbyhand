@@ -4,124 +4,6 @@ import { CHALK_COLORS } from '../types';
 
 const { white, yellow, blue, green, coral } = CHALK_COLORS;
 
-export function LogDerivSketch() {
-  const svgRef = useRef<SVGSVGElement | null>(null);
-  const layerRef = useRef<SVGGElement | null>(null);
-  const [step, setStep] = useState(0);
-
-  useEffect(() => {
-    const timer = window.setInterval(() => {
-      setStep((s) => (s + 1) % 3);
-    }, 1500);
-    return () => window.clearInterval(timer);
-  }, []);
-
-  useEffect(() => {
-    const svg = svgRef.current;
-    const g = layerRef.current;
-    if (!svg || !g) return;
-    while (g.firstChild) g.removeChild(g.firstChild);
-    const rc = rough.svg(svg);
-
-    g.appendChild(
-      rc.rectangle(24, 24, 224, 62, {
-        stroke: coral,
-        strokeWidth: 2,
-        fill: 'rgba(207, 114, 120, 0.1)',
-        fillStyle: 'hachure',
-        hachureGap: 10,
-        roughness: 1.9,
-        seed: 601,
-      })
-    );
-
-    g.appendChild(
-      rc.line(258, 55, 326, 55, {
-        stroke: yellow,
-        strokeWidth: 2.2,
-        roughness: 1.7,
-        seed: 602,
-      })
-    );
-    g.appendChild(
-      rc.linearPath(
-        [
-          [315, 47],
-          [328, 55],
-          [316, 63],
-        ],
-        { stroke: yellow, strokeWidth: 2.2, roughness: 1.4, seed: 603 }
-      )
-    );
-
-    g.appendChild(
-      rc.rectangle(338, 24, 278, 62, {
-        stroke: green,
-        strokeWidth: 2.2,
-        fill: 'rgba(133, 184, 148, 0.12)',
-        fillStyle: 'hachure',
-        hachureGap: 10,
-        roughness: 1.9,
-        seed: 604,
-      })
-    );
-
-    g.appendChild(
-      rc.ellipse(400, 55, 92, 44, {
-        stroke: yellow,
-        strokeWidth: 2.0,
-        roughness: 2.0,
-        seed: 605,
-      })
-    );
-  }, []);
-
-  return (
-    <figure className="blog-figure" style={{ padding: '24px 20px 20px' }}>
-      <svg
-        ref={svgRef}
-        viewBox="0 0 640 142"
-        width="100%"
-        style={{ display: 'block', maxWidth: 640, overflow: 'visible' }}
-        role="img"
-        aria-label="对数求导恒等式把梯度变回期望"
-      >
-        <g ref={layerRef} style={{ filter: 'url(#chalk-stroke-filter)' }} />
-
-        <g style={{ opacity: step === 0 ? 1 : 0.72, transition: 'opacity 320ms ease' }}>
-          <text x="136" y="63" textAnchor="middle" fill={coral} fontSize="24" className="chalk-title">
-            ∇θ Pθ(y | x)
-          </text>
-          <text x="136" y="116" textAnchor="middle" fill="var(--lab-muted)" fontSize="19" className="chalk-title">
-            外面没有 Pθ，没法采样
-          </text>
-        </g>
-
-        <text x="292" y="40" textAnchor="middle" fill={yellow} fontSize="17" className="chalk-title">
-          (ln f)&apos; = f&apos;/f
-        </text>
-
-        <g style={{ opacity: step >= 1 ? 1 : 0.72, transition: 'opacity 320ms ease' }}>
-          <text x="477" y="63" textAnchor="middle" fill={green} fontSize="23" className="chalk-title">
-            Pθ(y | x)  ∇θ ln Pθ(y | x)
-          </text>
-          <text
-            x="477"
-            y="116"
-            textAnchor="middle"
-            fill={step === 2 ? yellow : 'var(--lab-muted)'}
-            fontSize="19"
-            className="chalk-title"
-            style={{ transition: 'fill 300ms ease' }}
-          >
-            Pθ 回到最前面，重新变回期望
-          </text>
-        </g>
-      </svg>
-    </figure>
-  );
-}
-
 const TOKENS = [
   { label: '3', prob: '0.5', color: blue },
   { label: '*', prob: '0.6', color: yellow },
@@ -242,7 +124,7 @@ export function TokenChainSketch() {
           P = 0.24
         </text>
         <text x="560" y="89" textAnchor="middle" fill={blue} fontSize="19" className="chalk-title">
-          ln P = -1.42
+          ln P = -1.43
         </text>
 
         <text x="320" y="153" textAnchor="middle" fill="var(--lab-muted)" fontSize="18" className="chalk-title">
