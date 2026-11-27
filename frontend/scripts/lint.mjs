@@ -36,6 +36,17 @@ function stripFencedCode(mdx) {
   return mdx.replace(/```[\s\S]*?```/g, (m) => m.replace(/[^\n]/g, ' '));
 }
 
+function stripNonProseForPunct(prose) {
+  return prose
+    .replace(/^import\s+[^\n]+$/gm, (m) => ' '.repeat(m.length))
+    .replace(/export\s+const\s+meta\s*=\s*\{[\s\S]*?\};?/g, (m) => m.replace(/[^\n]/g, ' '))
+    .replace(/\$\$[\s\S]*?\$\$/g, (m) => m.replace(/[^\n]/g, ' '))
+    .replace(/\$[^$\n]+\$/g, (m) => ' '.repeat(m.length))
+    .replace(/`[^`\n]+`/g, (m) => ' '.repeat(m.length))
+    .replace(/<[^>]+>/g, (m) => ' '.repeat(m.length))
+    .replace(/https?:\/\/[^\s)]+/g, (m) => ' '.repeat(m.length));
+}
+
 function visualCols(line) {
   let cols = 0;
   for (const ch of line) {
@@ -164,6 +175,17 @@ for (const file of mdxFiles) {
     for (const m of prose.matchAll(regex)) {
       fail(file, rule, `line ${lineOf(prose, m.index)} ${msg}`);
     }
+  }
+
+  const cleanProse = stripNonProseForPunct(prose);
+  for (const m of cleanProse.matchAll(/[：:]/g)) {
+    fail(file, 'no-colon', `line ${lineOf(cleanProse, m.index)} contains colon "${m[0]}"`);
+  }
+  for (const m of cleanProse.matchAll(/[；;]/g)) {
+    fail(file, 'no-semicolon', `line ${lineOf(cleanProse, m.index)} contains semicolon "${m[0]}"`);
+  }
+  for (const m of cleanProse.matchAll(/[\u4e00-\u9fff]\s*[（(][A-Za-z][A-Za-z0-9\s\-/]*[）)]/g)) {
+    fail(file, 'no-cn-en-parens', `line ${lineOf(cleanProse, m.index)} uses Chinese-with-English-parens "${m[0]}"`);
   }
 
   for (const m of prose.matchAll(/\]\(#\/([^)\s#]+)\)/g)) {
